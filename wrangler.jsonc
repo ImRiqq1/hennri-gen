@@ -36,8 +36,8 @@
 
   "vars": {
     // Preenchidos ao configurar o Access (Zero Trust → Applications → gen.hennri.com).
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": "",
+    "ACCESS_TEAM_DOMAIN": "bold-salad-1415.cloudflareaccess.com",
+    "ACCESS_AUD": "35c8ea3a87b0a0bac0fbc363b494bc201f0dafd217ef5c133491f95a649b77b7",
     // URL pública pra montar o webhook. O token (WEBHOOK_TOKEN) é secret: wrangler secret put WEBHOOK_TOKEN
     "PUBLIC_URL": "https://gen.hennri.com"
   },
