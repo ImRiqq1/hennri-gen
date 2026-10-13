@@ -60,9 +60,7 @@ export function Criar() {
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-3">
           <Composer modeId={modeId} spend={stats.kind === "ok" ? stats.data.spend : null} />
-          <div className="hidden lg:block">
-            <GalleryPeek stats={stats} />
-          </div>
+          <GalleryPeek stats={stats} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <QueueCard stats={stats} />
@@ -73,9 +71,6 @@ export function Criar() {
         </div>
       </div>
 
-      <div className="lg:hidden">
-        <GalleryPeek stats={stats} />
-      </div>
     </div>
   )
 }

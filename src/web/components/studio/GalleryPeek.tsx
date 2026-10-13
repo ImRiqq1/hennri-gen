@@ -1,62 +1,69 @@
 import { motion } from "motion/react"
-import { ArrowUpRight, Play } from "lucide-react"
+import { ArrowUpRight, Clapperboard, Sparkles } from "lucide-react"
+import { Link } from "react-router-dom"
 import { Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import type { Stats } from "@/lib/api"
 import type { PollState } from "@/lib/usePoll"
 
-// Molduras vazias nas proporções que o site gera: mostram onde os vídeos vão morar,
-// sem inventar conteúdo.
-const FRAMES = [
-  { r: "9 / 16", w: 150 },
-  { r: "16 / 9", w: 300 },
-  { r: "1 / 1", w: 200 },
-  { r: "9 / 16", w: 150 },
-  { r: "4 / 3", w: 240 },
-  { r: "21 / 9", w: 340 },
-  { r: "3 / 4", w: 170 },
-]
+// Estado vazio de verdade: três molduras de linha fina (9:16, 16:9, 1:1) empilhadas,
+// uma frase e o atalho pra começar — nada que pareça conteúdo carregando.
+function EmptyFrames() {
+  const frames = [
+    { w: 34, h: 60, x: 0, r: -6 },
+    { w: 96, h: 54, x: 22, r: 0 },
+    { w: 50, h: 50, x: 96, r: 6 },
+  ]
+  return (
+    <div aria-hidden className="relative h-[64px] w-[150px] shrink-0">
+      {frames.map((f, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 8, rotate: 0 }}
+          animate={{ opacity: 1, y: 0, rotate: f.r }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.3 + i * 0.06 }}
+          className="absolute bottom-0 rounded-[8px] border border-dashed border-line-2 bg-surface"
+          style={{ width: f.w, height: f.h, left: f.x }}
+        />
+      ))}
+      <span className="absolute bottom-[18px] left-[62px] grid size-6 place-items-center rounded-full bg-invert text-invert-ink">
+        <Clapperboard className="size-3" strokeWidth={2} />
+      </span>
+    </div>
+  )
+}
 
 export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
   const saved = stats.kind === "ok" ? stats.data.gallery.saved : null
   return (
     <GlassCard
       delay={0.32}
-      className="overflow-hidden p-5"
+      className="p-5"
       corner={
-        <NotchButton disabled title="Galeria chega na fase 3" aria-label="Abrir galeria">
-          <ArrowUpRight className="size-5" strokeWidth={1.8} />
+        <NotchButton disabled title="Galeria chega na fase 3" aria-label="Abrir galeria (fase 3)">
+          <ArrowUpRight className="size-[18px]" strokeWidth={1.8} />
         </NotchButton>
       }
     >
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-2 pr-14">
-        <div>
-          <Eyebrow>Galeria</Eyebrow>
-          <p className="display-title mt-2 text-3xl text-text">
-            {saved ? `${saved} salvos` : "Ainda vazia"}
-          </p>
-        </div>
-        <p className="pb-0.5 text-sm text-text-2">Cada vídeo fica no R2 com prompt, modelo e parâmetros — além dos 7 dias da Higgsfield.</p>
-      </div>
-      <div className="no-scrollbar -mx-5 mt-6 flex items-end gap-3 overflow-x-auto px-5 pb-1 sm:-mx-6 sm:px-6">
-        {FRAMES.map((f, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: 0.4 + i * 0.05 }}
-            whileHover={{ y: -6 }}
-            className="skeleton relative h-[150px] shrink-0 overflow-hidden rounded-[22px] border border-line sm:h-[190px]"
-            style={{ aspectRatio: f.r }}
+      <Eyebrow>Galeria</Eyebrow>
+      {saved ? (
+        <p className="display-title mt-2 text-card text-text">{saved} vídeos salvos</p>
+      ) : (
+        <div className="mt-3 flex flex-col gap-4 pr-12 sm:flex-row sm:items-center">
+          <EmptyFrames />
+          <div className="min-w-0 flex-1">
+            <p className="text-card font-medium tracking-[-0.02em] text-text">Nenhum vídeo ainda</p>
+            <p className="mt-1 text-[13px] text-text-2">
+              Cada resultado fica salvo no R2 com prompt, modelo e parâmetros — além dos 7 dias da Higgsfield.
+            </p>
+          </div>
+          <Link
+            to="/criar"
+            className="flex h-9 shrink-0 items-center gap-2 self-start rounded-full border border-line-2 px-3.5 text-sm text-text transition-colors hover:bg-surface-2 sm:self-center"
           >
-            <span className="absolute inset-0 grid place-items-center">
-              <span className="grid size-10 place-items-center rounded-full bg-surface-2 text-text-3">
-                <Play className="size-4" fill="currentColor" />
-              </span>
-            </span>
-            <span className="absolute bottom-2.5 left-2.5 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-3 tabular">{f.r.replace(/ /g, "")}</span>
-          </motion.div>
-        ))}
-      </div>
+            <Sparkles className="size-3.5" /> Criar o primeiro <span className="kbd ml-0.5">N</span>
+          </Link>
+        </div>
+      )}
     </GlassCard>
   )
 }
