@@ -90,3 +90,8 @@ Sempre responder e escrever em português do Brasil.
 - **Linhagem**: `parent_job_id` + `parent_relation` (refeito, editado, estendido, continuação, referência, genjutsu — migration 0003). A Galeria grava a origem via `setOrigin`/`prefillFrom(job, relação)`; `GET /api/jobs/:id/lineage` devolve ancestrais e descendentes.
 - **Comparar**: Galeria → Comparar → 2 a 4 vídeos prontos; o primeiro manda no tempo e os outros são ressincronizados se derrapam > 0,15 s.
 - **Avisos**: `JobsProvider` (no Shell) faz o polling único de jobs pro site todo e avisa ao terminar (toast + som sintetizado + notificação do sistema com a aba oculta). Preferências por navegador em `localStorage` `mise:avisos`, editáveis em Config. Com a aba oculta o polling pausa (o cron do servidor continua).
+
+## Desconto da conta (13/10/2026)
+
+- Kling/Wan/MiniMax: o `usd` da estimativa já vem com o desconto da conta (campo `discount` mostra o quanto) — automático.
+- Seedance/Genjutsu/Cinema: a estimativa só traz a tabela cheia ("before any applicable customer discount"); `/models` não tem preço nem desconto; o "Your current price" só existe no console (login, não chave). Então o desconto vem de `settings.desconto_pct` ({seedance, genjutsu, cinema}, editável em Config, migration 0004) e é aplicado em `estimateFor(env, input)`. A taxa de tabela continua sendo relida da API a cada 10 min.

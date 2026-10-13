@@ -11,6 +11,7 @@ export type Settings = {
   padrao_proporcao: string
   padrao_duracao: number
   padrao_audio: boolean
+  desconto_pct: { seedance: number; genjutsu: number; cinema: number }
 }
 
 export type Project = { id: string; name: string; color: string | null; archived: boolean; jobs: number; spent_usd: number; created_at: number }

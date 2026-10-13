@@ -36,8 +36,24 @@ function hfBody(i: EstimateInput) {
 const rateCache = new Map<string, { rates: Partial<Record<Res, number>>; at: number }>()
 const RATE_TTL = 10 * 60 * 1000
 
-/** Estimativa de um pedido (usada pela rota e pelo envio de jobs). */
-export async function estimateFor(credentials: string | undefined, input: EstimateInput): Promise<EstimateResult> {
+/**
+ * Estimativa de um pedido (usada pela rota e pelo envio de jobs). Pra Seedance/Genjutsu/Cinema,
+ * a API só dá a tabela cheia; aplica o desconto da conta guardado em settings.desconto_pct
+ * (a API não expõe esse desconto — ver CLAUDE.md). Kling/Wan/MiniMax já vêm com desconto.
+ */
+export async function estimateFor(env: { HF_CREDENTIALS?: string; DB: D1Database }, input: EstimateInput): Promise<EstimateResult> {
+  const r = await listEstimate(env.HF_CREDENTIALS, input)
+  const ep = endpointFor(input.modeId, input.model)
+  if (!ep || ep.kind === "exact" || r.perTake === null || r.total === null) return r
+  const family = ep.kind === "seedance-src" ? "seedance" : ep.kind
+  const row = await env.DB.prepare(`SELECT value FROM settings WHERE key = 'desconto_pct'`).first<{ value: string }>()
+  const pct = Math.min(95, Math.max(0, Number((row ? JSON.parse(row.value) : {})[family] ?? 0)))
+  if (!pct) return r
+  const k = 1 - pct / 100
+  return { ...r, perTake: r.perTake * k, total: r.total * k, basis: `${r.basis} · −${pct}% desconto da conta` }
+}
+
+async function listEstimate(credentials: string | undefined, input: EstimateInput): Promise<EstimateResult> {
   const ep = endpointFor(input.modeId, input.model)
   if (!ep) return { perTake: null, total: null, source: "indisponivel", basis: "modelo sem endpoint conhecido" }
 
@@ -91,5 +107,5 @@ export async function estimateFor(credentials: string | undefined, input: Estima
 export const estimateRoute = new Hono<AppEnv>().post("/", async (c) => {
   const parsed = EstimateBody.safeParse(await c.req.json().catch(() => null))
   if (!parsed.success) return c.json({ error: "parâmetros inválidos" }, 400)
-  return c.json<EstimateResult>(await estimateFor(c.env.HF_CREDENTIALS, parsed.data))
+  return c.json<EstimateResult>(await estimateFor(c.env, parsed.data))
 })

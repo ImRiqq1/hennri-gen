@@ -81,7 +81,9 @@ function ConfigForm({ initial }: { initial: Settings }) {
       ? "O limite diário não pode passar do mensal."
       : form.concorrencia_max < 1 || form.concorrencia_max > 20
         ? "Concorrência entre 1 e 20."
-        : null
+        : Object.values(form.desconto_pct ?? {}).some((v) => !(v >= 0 && v <= 95))
+          ? "Desconto entre 0 e 95%."
+          : null
 
   async function save() {
     if (problem) return
@@ -133,6 +135,37 @@ function ConfigForm({ initial }: { initial: Settings }) {
             />
           </label>
         </Row>
+      </GlassCard>
+
+      <GlassCard className="px-5 py-1">
+        <p className="label pt-4">Desconto da conta na Higgsfield</p>
+        <p className="mt-1 text-[13px] text-text-3">
+          Pra estes modelos a API só informa a tabela cheia, então o desconto vem daqui. Kling, Wan e MiniMax já chegam com desconto e se atualizam
+          sozinhos. Confira em console.higgsfield.ai → preços ("Your current price").
+        </p>
+        {(
+          [
+            ["seedance", "Seedance 2.5", "texto, imagem, referências, editar e estender"],
+            ["genjutsu", "Genjutsu", "motion transfer, object swap e restyle"],
+            ["cinema", "Cinema Studio 4.0", ""],
+          ] as const
+        ).map(([k, label, hint]) => (
+          <Row key={k} label={label} hint={hint || undefined}>
+            <label className="flex h-10 w-[120px] items-center gap-2 rounded-full border border-line-2 bg-surface px-3.5 focus-within:border-text-3">
+              <input
+                type="number"
+                min={0}
+                max={95}
+                step={1}
+                value={form.desconto_pct?.[k] ?? 0}
+                onChange={(e) => set("desconto_pct", { ...(form.desconto_pct ?? { seedance: 0, genjutsu: 0, cinema: 0 }), [k]: Number(e.target.value) })}
+                aria-label={`Desconto ${label} em %`}
+                className="w-full bg-transparent text-right text-sm text-text tabular outline-none"
+              />
+              <span className="font-mono text-xs text-text-3">%</span>
+            </label>
+          </Row>
+        ))}
       </GlassCard>
 
       <GlassCard className="px-5 py-1">

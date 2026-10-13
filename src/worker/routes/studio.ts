@@ -16,6 +16,12 @@ const SettingsSchema = z.object({
   padrao_proporcao: z.enum(["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"]),
   padrao_duracao: z.number().int().min(4).max(30),
   padrao_audio: z.boolean(),
+  /** % de desconto da conta por família (a API não informa pra estes) */
+  desconto_pct: z.object({
+    seedance: z.number().min(0).max(95),
+    genjutsu: z.number().min(0).max(95),
+    cinema: z.number().min(0).max(95),
+  }),
 })
 export type Settings = z.infer<typeof SettingsSchema>
 

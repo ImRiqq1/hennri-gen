@@ -116,7 +116,7 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
   const built = buildRequest(req)
   if ("error" in built) return { ok: false, status: 400, error: built.error }
 
-  const est = await estimateFor(env.HF_CREDENTIALS, req)
+  const est = await estimateFor(env, req)
   if (est.perTake === null || est.total === null) {
     return { ok: false, status: 400, error: `Sem estimativa de custo — o job não sai (${est.basis}).` }
   }
