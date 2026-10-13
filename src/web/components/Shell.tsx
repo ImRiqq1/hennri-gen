@@ -21,6 +21,7 @@ import { Ambient } from "@/components/Ambient"
 import { CommandCenter, useCommandCenter } from "@/components/CommandCenter"
 import { AccentPicker, ThemeToggle } from "@/components/ThemeControls"
 import { isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
+import { useFocusTrap } from "@/lib/useFocusTrap"
 import { cn } from "@/lib/utils"
 
 type NavItem = { to: string; label: string; icon: LucideIcon; fase: number | null; keys?: string }
@@ -213,6 +214,7 @@ function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => 
 }
 
 function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const trap = useFocusTrap<HTMLElement>(open)
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
@@ -231,6 +233,7 @@ function Drawer({ open, onClose }: { open: boolean; onClose: () => void }) {
         >
           <button type="button" aria-label="Fechar menu" onClick={onClose} className="absolute inset-0 bg-black/45" />
           <motion.aside
+            ref={trap}
             role="dialog"
             aria-modal="true"
             aria-label="Menu"

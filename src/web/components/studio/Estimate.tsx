@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import type { EstimateInput, EstimateResult } from "@shared/pricing"
 import { AnimatedNumber } from "@/components/AnimatedNumber"
 import type { Stats } from "@/lib/api"
+import { useFocusTrap } from "@/lib/useFocusTrap"
 import { cn } from "@/lib/utils"
 
 const usd = (n: number) => "US$ " + n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -157,6 +158,7 @@ export function ConfirmCost({
   onCancel: () => void
   onConfirm: () => void
 }) {
+  const trap = useFocusTrap<HTMLDivElement>(open)
   useEffect(() => {
     if (!open) return
     const k = (e: KeyboardEvent) => e.key === "Escape" && onCancel()
@@ -174,6 +176,7 @@ export function ConfirmCost({
           onPointerDown={(e) => e.target === e.currentTarget && onCancel()}
         >
           <motion.div
+            ref={trap}
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-title"

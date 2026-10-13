@@ -16,6 +16,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useNavigate } from "react-router-dom"
 import { MODES } from "@/lib/modes"
 import { EVENTS, isTyping, SHORTCUTS } from "@/lib/shortcuts"
+import { useFocusTrap } from "@/lib/useFocusTrap"
 import { cn } from "@/lib/utils"
 import { ACCENTS, useTheme } from "@/theme/theme"
 
@@ -153,6 +154,8 @@ export function CommandCenter({ children }: { children: ReactNode }) {
 }
 
 function Overlay({ children, onClose, label }: { children: ReactNode; onClose: () => void; label: string }) {
+  // montado só enquanto aberto: o foco fica preso aqui e volta pro botão de origem ao fechar
+  const trap = useFocusTrap<HTMLDivElement>(true)
   return (
     <motion.div
       role="dialog"
@@ -166,6 +169,7 @@ function Overlay({ children, onClose, label }: { children: ReactNode; onClose: (
       onPointerDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <motion.div
+        ref={trap}
         initial={{ opacity: 0, y: -12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -6, scale: 0.99, transition: { duration: 0.12 } }}
