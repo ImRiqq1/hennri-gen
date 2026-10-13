@@ -2,6 +2,7 @@ import { Hono } from "hono"
 import { requireAccess } from "./middleware/access"
 import { health } from "./routes/health"
 import { estimateRoute } from "./routes/estimate"
+import { files, jobs } from "./routes/jobs"
 import { stats } from "./routes/stats"
 import { genjutsu, uploads } from "./routes/uploads"
 import type { AppEnv } from "./types"
@@ -16,6 +17,8 @@ app.route("/stats", stats)
 app.route("/uploads", uploads)
 app.route("/genjutsu", genjutsu)
 app.route("/estimate", estimateRoute)
+app.route("/jobs", jobs)
+app.route("/files", files)
 
 app.notFound((c) => c.json({ error: "rota não encontrada" }, 404))
 app.onError((err, c) => {

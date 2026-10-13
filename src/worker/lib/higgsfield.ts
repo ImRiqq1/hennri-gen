@@ -79,3 +79,62 @@ export async function restylePresets(credentials: string | undefined) {
   const { body } = await hfFetch(credentials, "/models/higgsfield/genjutsu/restyle/v1.0/presets")
   return ((body as { items?: RestylePreset[] } | null)?.items ?? []) as RestylePreset[]
 }
+
+// ---------------------------------------------------------------- geração
+
+/** A credencial só pode ir pra api.higgsfield.ai — status_url/cancel_url vêm da API e são conferidas. */
+function assertHfUrl(url: string) {
+  const u = new URL(url)
+  if (u.protocol !== "https:" || u.host !== new URL(HF_BASE_URL).host) {
+    throw new HiggsfieldError(`URL fora da Higgsfield recusada: ${u.host}`, 0, null, null)
+  }
+  return u.toString()
+}
+
+export type SubmitResult = { request_id: string; status_url: string; cancel_url: string; status: string }
+
+/**
+ * POST /<endpoint> com Idempotency-Key. Reenviar com a mesma chave e o mesmo corpo devolve o
+ * mesmo request (sem cobrar de novo); o status do recibo pode vir "queued" mesmo já terminado.
+ */
+export async function submit(
+  credentials: string | undefined,
+  endpoint: string,
+  body: unknown,
+  idempotencyKey: string,
+  webhookUrl?: string,
+) {
+  const q = webhookUrl ? `?hf_webhook=${encodeURIComponent(webhookUrl)}` : ""
+  const { body: res, correlationId } = await hfFetch(credentials, `/${endpoint}${q}`, {
+    method: "POST",
+    headers: { "Idempotency-Key": idempotencyKey },
+    body: JSON.stringify(body),
+  })
+  return { ...(res as SubmitResult), correlationId }
+}
+
+export type StatusResult = {
+  status: string
+  request_id: string
+  error?: string | null
+  video?: { url: string; content_type?: string }
+  images?: { url: string; content_type?: string }[]
+  audio?: { url: string }
+}
+
+export async function getStatus(credentials: string | undefined, statusUrl: string) {
+  const res = await fetch(assertHfUrl(statusUrl), { headers: { Authorization: authHeader(credentials) } })
+  const correlationId = res.headers.get("X-Correlation-ID")
+  const body = await res.json().catch(() => null)
+  if (!res.ok) {
+    const detail = (body as { detail?: unknown } | null)?.detail ?? body
+    throw new HiggsfieldError(typeof detail === "string" ? detail : `HTTP ${res.status}`, res.status, correlationId, detail)
+  }
+  return body as StatusResult
+}
+
+/** 202 = cancelado (estava queued); 400 = já começou, não dá mais. */
+export async function cancelRequest(credentials: string | undefined, cancelUrl: string) {
+  const res = await fetch(assertHfUrl(cancelUrl), { method: "POST", headers: { Authorization: authHeader(credentials) } })
+  return res.status
+}
