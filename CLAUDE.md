@@ -34,6 +34,8 @@ Sempre responder e escrever em português do Brasil.
 - Erros: 401 credencial, 403 saldo insuficiente, 404 modelo/request inexistente, 422 validação ou Idempotency-Key reusada com parâmetros diferentes, 423 modelo bloqueado, 503 modelo fora do ar.
 - Reenvio com a mesma Idempotency-Key devolve recibo com `status: queued` mesmo se já terminou — ler o `status_url`.
 - Não há endpoint de saldo nem custo real cobrado na resposta do job.
+- **Estimativa nem sempre é número.** Pro SOUL V2 volta `{ credits, usd }`; pro Seedance 2.5 volta `{ type: "description", pricing_description }` com a tabela em texto (13/10/2026: ~US$ 0,2056/s 480p, 0,4622/s 720p, 1,1372/s 1080p, áudio não muda o preço). O cálculo do custo precisa tratar os dois formatos.
+- Chave local: `& .\scripts\set-hf-key.ps1` grava `HF_CREDENTIALS` no `.dev.vars` sem exibir o valor.
 - SDK `@higgsfield/client@0.2.6` (v2) só expõe `subscribe` e reenvia o POST sem Idempotency-Key — não usar pra submissão (decisão pendente com o Henrique).
 
 ## Desenvolvimento local
