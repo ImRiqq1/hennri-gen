@@ -50,7 +50,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["1", "…", "8"], label: "Trocar de modo" },
       { keys: ["/"], label: "Focar o prompt" },
-      { keys: ["[", "]"], label: "Duração −1 s / +1 s" },
+      { keys: ["Alt", "←", "→"], label: "Duração −1 s / +1 s" },
       { keys: ["−", "+"], label: "Menos / mais takes" },
       { keys: [MOD, "↵"], label: "Gerar" },
     ],

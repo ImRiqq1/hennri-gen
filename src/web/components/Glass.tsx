@@ -37,7 +37,7 @@ export function GlassCard({
         {...motionProps}
         onPointerMove={onMove}
         onPointerLeave={leave}
-        className={cn("glass spotlight relative rounded-[28px]", className)}
+        className={cn("glass spotlight relative rounded-[24px]", className)}
         {...rest}
       >
         {children}
@@ -46,7 +46,7 @@ export function GlassCard({
   }
   return (
     <motion.section {...motionProps} className="relative" {...rest}>
-      <div onPointerMove={onMove} onPointerLeave={leave} className={cn("glass spotlight notch relative h-full rounded-[28px]", className)}>
+      <div onPointerMove={onMove} onPointerLeave={leave} className={cn("glass spotlight notch relative h-full rounded-[24px]", className)}>
         {children}
       </div>
       {corner}
@@ -63,7 +63,7 @@ export function NotchButton({ className, ...props }: ComponentProps<"button">) {
       transition={spring}
       type="button"
       className={cn(
-        "glass-2 absolute top-0 right-0 grid size-[52px] place-items-center rounded-full text-text",
+        "glass-2 absolute top-0 right-0 grid size-[44px] place-items-center rounded-full text-text",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

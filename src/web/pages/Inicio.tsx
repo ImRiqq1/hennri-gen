@@ -30,8 +30,8 @@ function Rise({ children, delay = 0, className }: { children: ReactNode; delay?:
 function Stat({ value, label, delay }: { value: string; label: string; delay: number }) {
   return (
     <Rise delay={delay} className="min-w-0">
-      <p className="display-num text-[44px] text-text sm:text-[56px]">{value}</p>
-      <p className="mt-2 text-sm text-text-3">{label}</p>
+      <p className="display-num text-metric-sm text-text sm:text-metric">{value}</p>
+      <p className="mt-1.5 text-[13px] text-text-3">{label}</p>
     </Rise>
   )
 }
@@ -55,13 +55,13 @@ function Header({ stats }: { stats: PollState<Stats> }) {
             initial={{ y: "105%" }}
             animate={{ y: 0 }}
             transition={{ duration: 0.85, ease }}
-            className="display-title text-[clamp(44px,6.4vw,84px)] text-text"
+            className="display-title text-page text-text"
           >
             {greeting()}, Henrique<span className="text-accent">.</span>
           </motion.h1>
         </div>
         <Rise delay={0.12}>
-          <p className="mt-3 text-lg text-text-2">{sub}</p>
+          <p className="mt-2 text-[15px] text-text-2">{sub}</p>
         </Rise>
       </div>
       <div className="grid grid-cols-3 gap-6 sm:gap-10">
@@ -82,20 +82,20 @@ function HeroAction() {
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.7, ease, delay: 0.1 }}
-      className="relative h-full min-h-[300px]"
+      className="relative h-full min-h-[220px]"
     >
       <button
         type="button"
         onClick={() => navigate("/criar")}
-        className="notch group flex h-full w-full flex-col overflow-hidden rounded-[28px] bg-accent p-6 text-left text-accent-ink shadow-[0_30px_60px_-30px_rgb(var(--accent-glow)/0.7)] sm:p-7"
+        className="notch group flex h-full w-full flex-col overflow-hidden rounded-[24px] bg-accent p-5 text-left text-accent-ink shadow-[0_30px_60px_-30px_rgb(var(--accent-glow)/0.7)]"
       >
         <span className="font-mono text-[11px] tracking-[0.06em] uppercase opacity-70">Novo job</span>
         {/* enquadramentos 9:16 / 16:9 / 1:1 desenhados em linha fina */}
-        <span aria-hidden className="mt-6 flex items-end gap-3 opacity-80">
+        <span aria-hidden className="mt-4 flex items-end gap-2.5 opacity-80">
           {[
-            [36, 64],
-            [96, 54],
-            [54, 54],
+            [27, 48],
+            [72, 40],
+            [40, 40],
           ].map(([w, h], i) => (
             <motion.span
               key={i}
@@ -111,9 +111,9 @@ function HeroAction() {
             </motion.span>
           ))}
         </span>
-        <span className="display-title mt-auto block pt-8 text-[clamp(40px,4.4vw,60px)]">{t2v.label}</span>
-        <span className="mt-3 block text-[15px] opacity-75">Seedance 2.5 · 720p · 5 s · sem áudio</span>
-        <span className="mt-6 flex items-center gap-2 text-sm">
+        <span className="display-title mt-auto block pt-5 text-[clamp(28px,1.4vw+14px,38px)]">{t2v.label}</span>
+        <span className="mt-2 block text-[13px] opacity-80">Seedance 2.5 · 720p · 5 s · sem áudio</span>
+        <span className="mt-4 flex items-center gap-2 text-sm">
           <span className="grid h-7 min-w-7 place-items-center rounded-lg bg-black/15 px-2 font-mono text-xs">N</span>
           <span className="opacity-75">ou</span>
           <span className="grid h-7 place-items-center rounded-lg bg-black/15 px-2 font-mono text-xs">{MOD} K</span>
@@ -142,7 +142,7 @@ function QuickAction({ modeId, icon: Icon, desc, delay }: { modeId: string; icon
   return (
     <GlassCard
       delay={delay}
-      className="group flex h-full cursor-pointer flex-col p-5"
+      className="group flex h-full cursor-pointer flex-col p-4"
       onClick={go}
       corner={
         <NotchButton aria-label={`Abrir ${mode.label}`} onClick={go}>
@@ -150,12 +150,12 @@ function QuickAction({ modeId, icon: Icon, desc, delay }: { modeId: string; icon
         </NotchButton>
       }
     >
-      <span className="grid size-11 place-items-center rounded-full bg-surface-2 text-text transition-colors group-hover:bg-invert group-hover:text-invert-ink">
+      <span className="grid size-9 place-items-center rounded-full bg-surface-2 text-text transition-colors group-hover:bg-invert group-hover:text-invert-ink">
         <Icon className="size-[18px]" strokeWidth={1.7} />
       </span>
-      <p className="mt-6 text-xl font-medium tracking-[-0.02em] text-text">{mode.label}</p>
-      <p className="mt-1 text-sm text-text-3">{desc}</p>
-      <div className="mt-auto flex items-center justify-between pt-5">
+      <p className="mt-4 text-card font-medium tracking-[-0.02em] text-text">{mode.label}</p>
+      <p className="mt-0.5 text-[13px] text-text-3">{desc}</p>
+      <div className="mt-auto flex items-center justify-between pt-3">
         <span className="truncate font-mono text-[11px] text-text-3">{mode.models.map((m) => m.name).join(" · ")}</span>
         <span className="kbd">{idx + 1}</span>
       </div>
@@ -170,7 +170,7 @@ function LimitInsight({ stats }: { stats: PollState<Stats> }) {
   const segments = 12
   const lit = Math.round((pct / 100) * segments)
   return (
-    <GlassCard delay={0.3} className="flex h-full flex-col p-6 sm:p-7">
+    <GlassCard delay={0.3} className="flex h-full flex-col p-5">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-2.5 text-sm text-text">
           <span className="grid size-8 place-items-center rounded-xl bg-invert text-invert-ink">
@@ -180,17 +180,17 @@ function LimitInsight({ stats }: { stats: PollState<Stats> }) {
         </span>
         <span className="rounded-full border border-line-2 px-3 py-1 text-xs text-text-2">Hoje</span>
       </div>
-      <div className="mt-8 flex items-start gap-2">
-        <span className={cn("display-num text-[104px] sm:text-[120px]", pct >= 100 ? "text-danger" : "text-text")}>{Math.round(pct)}%</span>
-        <ArrowUpRight className="mt-3 size-6 text-accent" strokeWidth={1.8} />
+      <div className="mt-5 flex items-start gap-1.5">
+        <span className={cn("display-num text-metric-xl", pct >= 100 ? "text-danger" : "text-text")}>{Math.round(pct)}%</span>
+        <ArrowUpRight className="mt-1 size-4 text-accent" strokeWidth={2} />
       </div>
-      <p className="mt-6 text-xl leading-snug tracking-[-0.015em] text-text">
+      <p className="mt-3 text-[16px] leading-snug tracking-[-0.015em] text-text">
         do limite diário usado <span className="text-text-3">até agora.</span>
       </p>
       <p className="mt-2 text-sm text-text-3">
         {s ? `${usd(s.dayUsd)} de ${s.dayLimitUsd != null ? usd(s.dayLimitUsd) : "—"} · mês ${usd(s.monthUsd)}` : "…"}
       </p>
-      <div className="mt-auto flex gap-1.5 pt-8">
+      <div className="mt-auto flex gap-1 pt-5">
         {Array.from({ length: segments }, (_, i) => (
           <motion.span
             key={i}
@@ -222,11 +222,11 @@ function TodayTimeline({ stats }: { stats: PollState<Stats> }) {
   const lanes = 3
 
   return (
-    <GlassCard delay={0.36} className="flex h-full flex-col p-6 sm:p-7">
+    <GlassCard delay={0.36} className="flex h-full flex-col p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <Eyebrow>Hoje</Eyebrow>
-          <p className="display-title mt-2 text-[28px] text-text">Linha do tempo</p>
+          <p className="display-title mt-1.5 text-card text-text">Linha do tempo</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-text-3">
           <span className="flex items-center gap-1.5"><span className="size-2 rounded-full bg-accent" /> gerando</span>
@@ -283,12 +283,12 @@ function TodayTimeline({ stats }: { stats: PollState<Stats> }) {
             className="absolute -top-3 bottom-0 flex -translate-x-1/2 flex-col items-center"
             style={{ left: pos(now) }}
           >
-            <span className="rounded-full bg-invert px-2 py-0.5 font-mono text-[10px] text-invert-ink tabular">{nowLabel}</span>
+            <span className="rounded-full bg-invert px-2 py-0.5 font-mono text-[11px] text-invert-ink tabular">{nowLabel}</span>
             <span className="w-px flex-1 bg-invert" />
             <span className="size-2 -translate-y-0.5 rounded-full bg-invert" />
           </motion.div>
         </div>
-        <div className="relative mt-3 h-4 font-mono text-[10px] text-text-3">
+        <div className="relative mt-3 h-4 font-mono text-[11px] text-text-3">
           {[0, 3, 6, 9, 12, 15, 18, 21].map((h) => (
             <span key={h} className="absolute -translate-x-1/2 first:translate-x-0" style={{ left: `${(h / 24) * 100}%` }}>
               {String(h).padStart(2, "0")}h
@@ -304,7 +304,7 @@ function ShortcutsCard() {
   const { openHelp, openPalette } = useCommandCenter()
   const items = [...SHORTCUTS[1].items, SHORTCUTS[0].items[0], SHORTCUTS[0].items[2], SHORTCUTS[2].items[0]]
   return (
-    <GlassCard delay={0.42} className="flex h-full flex-col p-6 sm:p-7">
+    <GlassCard delay={0.42} className="flex h-full flex-col p-5">
       <div className="flex items-center justify-between">
         <Eyebrow>Atalhos</Eyebrow>
         <button type="button" onClick={openHelp} className="flex items-center gap-2 text-xs text-text-2 hover:text-text">
@@ -313,7 +313,7 @@ function ShortcutsCard() {
       </div>
       <ul className="mt-4 grid gap-x-8 sm:grid-cols-2">
         {items.map((it) => (
-          <li key={it.label} className="flex items-center justify-between gap-3 border-b border-line py-3">
+          <li key={it.label} className="flex items-center justify-between gap-3 border-b border-line py-2.5">
             <span className="truncate text-sm text-text-2">{it.label}</span>
             <span className="flex shrink-0 gap-1">
               {it.keys.map((k, i) => (

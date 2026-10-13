@@ -36,9 +36,9 @@ function SideItem({ item, active }: { item: NavItem; active: boolean }) {
       </span>
       <span className={cn("relative hidden flex-1 text-sm xl:block", active ? "font-medium text-invert-ink" : "")}>{item.label}</span>
       {item.fase ? (
-        <span className="relative mr-3 hidden rounded-full border border-line-2 px-2 py-0.5 font-mono text-[10px] text-text-3 xl:block">fase {item.fase}</span>
+        <span className="relative mr-3 hidden rounded-full border border-line-2 px-2 py-0.5 font-mono text-[11px] text-text-3 xl:block">fase {item.fase}</span>
       ) : item.keys ? (
-        <span className={cn("relative mr-3 hidden font-mono text-[10px] tracking-wider opacity-0 transition-opacity group-hover:opacity-100 xl:block", active ? "text-invert-ink/60" : "text-text-3")}>
+        <span className={cn("relative mr-3 hidden font-mono text-[11px] tracking-wider opacity-0 transition-opacity group-hover:opacity-100 xl:block", active ? "text-invert-ink/60" : "text-text-3")}>
           {item.keys}
         </span>
       ) : null}

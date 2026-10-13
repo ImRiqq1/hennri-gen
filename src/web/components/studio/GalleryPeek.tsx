@@ -21,7 +21,7 @@ export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
   return (
     <GlassCard
       delay={0.32}
-      className="overflow-hidden p-5 sm:p-6"
+      className="overflow-hidden p-5"
       corner={
         <NotchButton disabled title="Galeria chega na fase 3" aria-label="Abrir galeria">
           <ArrowUpRight className="size-5" strokeWidth={1.8} />
@@ -53,7 +53,7 @@ export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
                 <Play className="size-4" fill="currentColor" />
               </span>
             </span>
-            <span className="absolute bottom-2.5 left-2.5 rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-text-3 tabular">{f.r.replace(/ /g, "")}</span>
+            <span className="absolute bottom-2.5 left-2.5 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-3 tabular">{f.r.replace(/ /g, "")}</span>
           </motion.div>
         ))}
       </div>

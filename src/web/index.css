@@ -23,8 +23,8 @@
   --line: rgb(255 255 255 / 0.065);
   --line-2: rgb(255 255 255 / 0.12);
   --text: #f5f5f4;
-  --text-2: rgb(245 245 244 / 0.6);
-  --text-3: rgb(245 245 244 / 0.34);
+  --text-2: rgb(245 245 244 / 0.74);
+  --text-3: rgb(245 245 244 / 0.52);
   --invert: #f5f5f4;
   --invert-ink: #0a0a0b;
   --float-bg: rgb(22 22 25 / 0.74);
@@ -46,8 +46,8 @@
   --line: rgb(12 12 16 / 0.07);
   --line-2: rgb(12 12 16 / 0.12);
   --text: #0a0a0b;
-  --text-2: rgb(10 10 11 / 0.58);
-  --text-3: rgb(10 10 11 / 0.36);
+  --text-2: rgb(10 10 11 / 0.72);
+  --text-3: rgb(10 10 11 / 0.56);
   --invert: #0a0a0b;
   --invert-ink: #f5f5f4;
   --float-bg: rgb(250 250 251 / 0.8);
@@ -83,7 +83,7 @@
   --border: var(--line);
   --input: var(--line-2);
   --ring: var(--accent);
-  --radius: 1.25rem;
+  --radius: 1.125rem;
 
   /* motion */
   --dur-xs: 120ms;
@@ -132,6 +132,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Escala tipográfica (13/10/2026, −15–20% em relação à primeira versão).
+     page = título da página; metric-* = números de destaque; card = título de card. */
+  --text-page: clamp(30px, 1.6vw + 16px, 46px);
+  --text-metric-xl: clamp(36px, 1.6vw + 20px, 52px);
+  --text-metric: 38px;
+  --text-metric-sm: 28px;
+  --text-card: 19px;
+  --text-body: 14px;
+  --text-micro: 11px;
 
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
@@ -209,8 +219,8 @@
   /* Recorte circular no canto superior direito (o "notch" das referências),
      onde mora o botão ↗. --notch = raio do recorte. */
   .notch {
-    --notch: 26px;
-    --notch-gap: 6px;
+    --notch: 22px;
+    --notch-gap: 5px;
     -webkit-mask: radial-gradient(
       circle calc(var(--notch) + var(--notch-gap)) at calc(100% - var(--notch)) var(--notch),
       transparent 99%,

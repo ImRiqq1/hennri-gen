@@ -17,7 +17,7 @@ const ease = [0.16, 1, 0.3, 1] as const
 export function Roadmap() {
   const current = FASES.find((f) => !f.done)?.n
   return (
-    <GlassCard delay={0.38} className="p-5 sm:p-6">
+    <GlassCard delay={0.38} className="p-5">
       <div className="flex items-center justify-between">
         <Eyebrow>Roteiro</Eyebrow>
         <span className="rounded-full bg-surface-2 px-3 py-1 text-xs text-text-2">fase {current} em seguida</span>

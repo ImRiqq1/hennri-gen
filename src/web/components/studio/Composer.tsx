@@ -33,7 +33,7 @@ export function ModeTabs({ value, onChange }: { value: string; onChange: (id: st
               )}
               <span className="relative flex items-center gap-2 whitespace-nowrap">
                 {m.label}
-                <span className={cn("hidden font-mono text-[10px] lg:inline", active ? "text-invert-ink/50" : "text-text-3")}>{i + 1}</span>
+                <span className={cn("hidden font-mono text-[11px] lg:inline", active ? "text-invert-ink/50" : "text-text-3")}>{i + 1}</span>
               </span>
             </button>
           )
@@ -63,8 +63,8 @@ function Segmented({ options, value, onChange, id }: { options: string[]; value:
 
 function Field({ label, hint, children, className }: { label: string; hint?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("min-w-0 rounded-[22px] border border-line bg-surface p-4", className)}>
-      <div className="mb-3 flex items-baseline justify-between gap-2">
+    <div className={cn("min-w-0 rounded-[18px] border border-line bg-surface px-3.5 py-3", className)}>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
         <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-text-3">{label}</span>
         {hint && <span className="text-xs text-text-3">{hint}</span>}
       </div>
@@ -119,7 +119,7 @@ function ModelPicker({ mode, model, onChange }: { mode: ModeDef; model: string; 
                   )}
                 >
                   {m.name}
-                  <span className="rounded-full border border-line-2 px-2 py-0.5 text-[10px] uppercase tracking-wider text-text-3">
+                  <span className="rounded-full border border-line-2 px-2 py-0.5 text-[11px] uppercase tracking-wider text-text-3">
                     {m.tier === 1 ? "principal" : "mais modelos"}
                   </span>
                 </button>
@@ -186,14 +186,15 @@ export function Composer({ modeId }: { modeId: string }) {
         tryGenerate()
         return
       }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !overlayOpen() && mode.duration && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+        e.preventDefault()
+        setDuration((d) => Math.min(30, Math.max(4, d + (e.key === "ArrowRight" ? 1 : -1))))
+        return
+      }
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || overlayOpen()) return
       if (e.key === "/") {
         e.preventDefault()
         promptRef.current?.focus()
-      } else if (e.key === "[" && mode.duration) {
-        setDuration((d) => Math.max(4, d - 1))
-      } else if (e.key === "]" && mode.duration) {
-        setDuration((d) => Math.min(30, d + 1))
       } else if (e.key === "-" || e.key === "_") {
         setTakes((t) => Math.max(1, t - 1))
       } else if (e.key === "+" || e.key === "=") {
@@ -232,7 +233,7 @@ export function Composer({ modeId }: { modeId: string }) {
   }, [model, mode, duration, resolution, aspect, audio])
 
   return (
-    <GlassCard delay={0.08} className="flex flex-col gap-5 p-4 sm:p-6">
+    <GlassCard delay={0.08} className="flex flex-col gap-3.5 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
         <ModelPicker mode={mode} model={model} onChange={setModel} />
         <div className="ml-auto flex items-center gap-1 rounded-full bg-surface p-1">
@@ -261,7 +262,7 @@ export function Composer({ modeId }: { modeId: string }) {
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={mode.placeholder}
           rows={4}
-          className="block min-h-[170px] w-full flex-1 resize-none bg-transparent px-5 pt-5 pb-12 text-lg leading-relaxed text-text outline-none placeholder:text-text-3 sm:text-xl"
+          className="block min-h-[128px] w-full flex-1 resize-none bg-transparent px-4 pt-4 pb-10 text-[16px] leading-relaxed text-text outline-none placeholder:text-text-3 sm:text-[17px]"
         />
         <div className="pointer-events-none absolute right-5 bottom-4 left-5 flex items-center justify-between text-xs text-text-3">
           <span className="tabular">{prompt.length.toLocaleString("pt-BR")} caracteres</span>
@@ -316,7 +317,7 @@ export function Composer({ modeId }: { modeId: string }) {
                     className="group/ref relative size-[88px] overflow-hidden rounded-[18px]"
                   >
                     <img src={r.url} alt={r.name} className="size-full object-cover" />
-                    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-white backdrop-blur">image_{i + 1}</span>
+                    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-white backdrop-blur">image_{i + 1}</span>
                     <button
                       type="button"
                       aria-label="Remover referência"
@@ -344,14 +345,14 @@ export function Composer({ modeId }: { modeId: string }) {
         )}
       </AnimatePresence>
 
-      {/* Parâmetros */}
-      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[1.2fr_1fr_1.4fr_auto]">
-        {mode.duration ? (
-          <Field label="Duração" hint="[ ]  4–30 s">
-            <div className="flex items-center gap-4">
-              <span className="display-num w-[62px] text-[40px] text-text">
+      {/* Parâmetros: só os que o modo usa, numa linha que quebra conforme a largura */}
+      <div className="flex flex-wrap gap-2.5">
+        {mode.duration && (
+          <Field label="Duração" hint="Alt ← →  ·  4–30 s" className="min-w-[230px] flex-[1.2]">
+            <div className="flex items-center gap-3">
+              <span className="display-num w-[44px] text-metric-sm text-text">
                 {duration}
-                <span className="text-lg text-text-3">s</span>
+                <span className="text-base text-text-3">s</span>
               </span>
               <input
                 type="range"
@@ -365,25 +366,22 @@ export function Composer({ modeId }: { modeId: string }) {
               />
             </div>
           </Field>
-        ) : (
-          <Field label="Duração">
-            <p className="py-2 text-sm text-text-2">Segue o vídeo de origem</p>
-          </Field>
         )}
 
-        <Field label="Resolução">
+        <Field label="Resolução" className="min-w-[200px] flex-1">
           <Segmented id="res" options={mode.resolutions} value={resolution} onChange={setResolution} />
         </Field>
 
-        {mode.aspect ? (
-          <Field label="Proporção" className="sm:col-span-2 2xl:col-span-1">
+        {mode.aspect && (
+          <Field label="Proporção" className="min-w-[280px] flex-[1.6]">
             <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-surface p-1">
               {ASPECTS.map((a) => (
                 <button
                   key={a.id}
                   type="button"
                   onClick={() => setAspect(a.id)}
-                  className={cn("relative flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs tabular transition-colors", aspect === a.id ? "text-invert-ink" : "text-text-2 hover:text-text")}
+                  aria-pressed={aspect === a.id}
+                  className={cn("relative flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs tabular transition-colors", aspect === a.id ? "text-invert-ink" : "text-text-2 hover:text-text")}
                 >
                   {aspect === a.id && <motion.span layoutId="seg-aspect" transition={spring} className="absolute inset-0 rounded-full bg-invert" />}
                   <span className="relative grid size-5 place-items-center">
@@ -394,27 +392,30 @@ export function Composer({ modeId }: { modeId: string }) {
               ))}
             </div>
           </Field>
-        ) : (
-          <Field label="Proporção" className="sm:col-span-2 2xl:col-span-1">
-            <p className="py-2 text-sm text-text-2">Segue a mídia de origem</p>
-          </Field>
         )}
 
-        <Field label="Áudio">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={audio}
-            disabled={!mode.audio}
-            onClick={() => setAudio((v) => !v)}
-            className={cn("relative flex h-10 w-[76px] items-center rounded-full p-1 transition-colors disabled:opacity-40", audio ? "bg-accent" : "bg-surface-2")}
-          >
-            <motion.span layout transition={spring} className={cn("grid size-8 place-items-center rounded-full shadow-[var(--shadow-sm)]", audio ? "ml-auto bg-accent-ink text-accent" : "bg-invert text-invert-ink")}>
-              {audio ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
-            </motion.span>
-          </button>
-        </Field>
+        {mode.audio && (
+          <Field label="Áudio" className="flex-none">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={audio}
+              aria-label="Gerar áudio"
+              onClick={() => setAudio((v) => !v)}
+              className={cn("relative flex h-9 w-[68px] items-center rounded-full p-1 transition-colors", audio ? "bg-accent" : "bg-surface-2")}
+            >
+              <motion.span layout transition={spring} className={cn("grid size-7 place-items-center rounded-full shadow-[var(--shadow-sm)]", audio ? "ml-auto bg-accent-ink text-accent" : "bg-invert text-invert-ink")}>
+                {audio ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
+              </motion.span>
+            </button>
+          </Field>
+        )}
       </div>
+      {(!mode.duration || !mode.aspect) && (
+        <p className="-mt-1 text-xs text-text-3">
+          {[!mode.duration && "Duração", !mode.aspect && "proporção"].filter(Boolean).join(" e ")} seguem a mídia de origem.
+        </p>
+      )}
 
       {/* Cinema Studio: controles fechados, "automático" pré-selecionado */}
       <AnimatePresence initial={false}>
@@ -433,11 +434,11 @@ export function Composer({ modeId }: { modeId: string }) {
       </AnimatePresence>
 
       {/* Rodapé: custo + gerar */}
-      <div className="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <Eyebrow>Estimativa</Eyebrow>
           <p className="mt-1 flex items-baseline gap-2">
-            <span className="display-num text-[34px] text-text">—</span>
+            <span className="display-num text-metric-sm text-text">—</span>
             <span className="truncate text-sm text-text-3">
               {takes > 1 ? `× ${takes} takes · ` : ""}custo ao vivo na fase 2
             </span>
@@ -463,7 +464,7 @@ export function Composer({ modeId }: { modeId: string }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={spring}
-            className="group relative flex h-14 flex-1 items-center justify-center gap-3 overflow-hidden rounded-full bg-accent pr-2 pl-6 text-base font-semibold text-accent-ink shadow-[0_18px_40px_-14px_rgb(var(--accent-glow)/0.7)] sm:flex-none"
+            className="group relative flex h-12 flex-1 items-center justify-center gap-2.5 overflow-hidden rounded-full bg-accent pr-1.5 pl-5 text-[15px] font-semibold text-accent-ink shadow-[0_18px_40px_-14px_rgb(var(--accent-glow)/0.7)] sm:flex-none"
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(110deg,transparent_30%,rgb(255_255_255/0.35)_50%,transparent_70%)] transition-transform duration-700 ease-out group-hover:translate-x-full" />
             <Sparkles className="size-5" strokeWidth={2} />

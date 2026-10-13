@@ -35,8 +35,8 @@ export function Criar() {
   const mode = MODES.find((m) => m.id === modeId)!
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <div className="min-w-0">
           <Eyebrow>Novo job</Eyebrow>
           <div className="mt-3 overflow-hidden pb-1">
@@ -45,7 +45,7 @@ export function Criar() {
               initial={{ y: "105%" }}
               animate={{ y: 0 }}
               transition={{ duration: 0.7, ease }}
-              className="display-title text-[clamp(40px,5vw,68px)] whitespace-nowrap text-text"
+              className="display-title text-page whitespace-nowrap text-text"
             >
               {mode.label}
               <span className="text-accent">.</span>
@@ -57,14 +57,14 @@ export function Criar() {
         </motion.div>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px] 2xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="flex min-w-0 flex-col gap-4">
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-3">
           <Composer modeId={modeId} />
           <div className="hidden lg:block">
             <GalleryPeek stats={stats} />
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
           <QueueCard stats={stats} />
           <SpendCard stats={stats} />
           <div className="sm:col-span-2 lg:col-span-1">
