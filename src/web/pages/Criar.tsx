@@ -4,7 +4,10 @@ import { useSearchParams } from "react-router-dom"
 import { Eyebrow } from "@/components/Glass"
 import { Composer, ModeTabs } from "@/components/studio/Composer"
 import { GalleryPeek } from "@/components/studio/GalleryPeek"
-import { QueueCard, SpendCard, SystemCard } from "@/components/studio/SideCards"
+import { JobQueue } from "@/components/studio/JobQueue"
+import { SpendCard, SystemCard } from "@/components/studio/SideCards"
+import { useToast } from "@/components/Toaster"
+import { useLiveJobs } from "@/lib/jobs"
 import { getStats } from "@/lib/api"
 import { MODES } from "@/lib/modes"
 import { isTyping, overlayOpen } from "@/lib/shortcuts"
@@ -17,7 +20,14 @@ export function Criar() {
   const [params, setParams] = useSearchParams()
   const modeId = MODES.some((m) => m.id === params.get("modo")) ? params.get("modo")! : MODES[0].id
   const setModeId = (id: string) => setParams(id === MODES[0].id ? {} : { modo: id }, { replace: true })
-  const [stats] = usePoll(getStats, 15_000)
+  const [stats, refreshStats] = usePoll(getStats, 15_000)
+  const toast = useToast()
+  // Fila ao vivo; quando um job termina, avisa e atualiza o gasto.
+  const jobs = useLiveJobs((j) => {
+    refreshStats()
+    if (j.status === "saved") toast({ title: "Pronto", detail: `${j.model_id} salvo na galeria.`, tone: "success" })
+    else if (j.status === "failed" || j.status === "nsfw") toast({ title: "Não gerou", detail: j.error ?? "Falhou (não cobrado).", tone: "error" })
+  })
 
   // 1–8 trocam de modo.
   useEffect(() => {
@@ -63,7 +73,7 @@ export function Criar() {
           <GalleryPeek stats={stats} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <QueueCard stats={stats} />
+          <JobQueue jobs={jobs} />
           <SpendCard stats={stats} />
           <div className="sm:col-span-2 lg:col-span-1">
             <SystemCard />

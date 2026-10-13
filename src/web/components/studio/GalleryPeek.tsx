@@ -3,7 +3,9 @@ import { ArrowUpRight, Clapperboard, Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import type { Stats } from "@/lib/api"
+import { useSavedJobs } from "@/lib/jobs"
 import type { PollState } from "@/lib/usePoll"
+import { VideoTile } from "@/components/VideoTile"
 
 // Estado vazio de verdade: três molduras de linha fina (9:16, 16:9, 1:1) empilhadas,
 // uma frase e o atalho pra começar — nada que pareça conteúdo carregando.
@@ -34,6 +36,7 @@ function EmptyFrames() {
 
 export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
   const saved = stats.kind === "ok" ? stats.data.gallery.saved : null
+  const recent = useSavedJobs(6)
   return (
     <GlassCard
       delay={0.32}
@@ -45,8 +48,21 @@ export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
       }
     >
       <Eyebrow>Galeria</Eyebrow>
-      {saved ? (
-        <p className="display-title mt-2 text-card text-text">{saved} vídeos salvos</p>
+      {saved && recent?.length ? (
+        <>
+          <p className="display-title mt-2 text-card text-text">
+            {saved} {saved === 1 ? "resultado salvo" : "resultados salvos"}
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-2 pr-0 sm:grid-cols-3">
+            {recent.map((j) =>
+              j.output_mime?.startsWith("video") ? (
+                <VideoTile key={j.id} src={j.output_url!} className="aspect-video" label={j.prompt ?? j.model_id} />
+              ) : (
+                <img key={j.id} src={j.output_url!} alt={j.prompt ?? j.model_id} className="aspect-video w-full rounded-[18px] border border-line object-cover" />
+              ),
+            )}
+          </div>
+        </>
       ) : (
         <div className="mt-3 flex flex-col gap-4 pr-12 sm:flex-row sm:items-center">
           <EmptyFrames />

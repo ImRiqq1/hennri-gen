@@ -57,3 +57,13 @@ Sempre responder e escrever em português do Brasil.
 - **Atalhos:** lista única em `src/web/lib/shortcuts.ts` (alimenta paleta ⌘K e ajuda ?). Globais no `CommandCenter`; os da tela Criar no `Composer`/`Criar`. Atalho de uma tecla ignora campos de texto (`isTyping`) e overlays abertos (`overlayOpen()`, via `data-overlay` no `<html>` — não procurar `[role=dialog]`, o que está saindo continua no DOM).
 - Rotas: `/` Início, `/criar?modo=<id>` (modo na URL).
 - Motion: biblioteca `motion` (`motion/react`), easing `[0.16, 1, 0.3, 1]`, `MotionConfig reducedMotion="user"`.
+
+## Geração (fase 2 — 13/10/2026)
+
+- `POST /api/jobs` cria 1 job por take. Ordem obrigatória: `buildRequest` (src/shared/generation.ts) → `estimateFor` (sem estimativa o job não sai) → limites diário/mensal contando gasto **+ jobs pendentes** → confirmação acima de `confirmacao_acima_usd` (409 `needsConfirm`, o front reenvia com `confirmed: true`).
+- `dispatch` ocupa as vagas de `concorrencia_max` (reserva atômica `UPDATE ... WHERE status='waiting_slot'`). 400 "concurrent" da Higgsfield devolve o job pra `waiting_slot`. 5xx/rede deixa em `submitting` e o refresh reenvia com a MESMA Idempotency-Key (= id do job) e o mesmo `request_body_json`.
+- Polling: `GET /api/jobs?active=1` consulta o `status_url` de cada job vivo (no máx. 1×/3 s por job). `completed` → `saveOutput` copia pro R2 (`jobs/<id>.<ext>`) via `waitUntil` → `saved`. `GET /api/files/jobs/...` serve do R2 com Range.
+- A credencial só vai pra URLs de `api.higgsfield.ai` (`assertHfUrl` confere status_url/cancel_url).
+- Estimativa (`src/shared/pricing.ts`): Seedance/Genjutsu/Cinema devolvem texto → `parseRates` + fórmula; Kling/SOUL devolvem `usd` exato; senão tabela local marcada "estimado".
+- Uploads: `POST /api/uploads` só pede a URL presignada (S3 da Higgsfield aceita PUT do navegador, CORS liberado); o arquivo vai direto do navegador com progresso (`src/web/lib/media.ts`).
+- Fase 3 ainda falta: webhook, Queue, Cron de recuperação (hoje um job só avança enquanto alguém está com a tela aberta).

@@ -1,5 +1,5 @@
 import { AnimatePresence, LayoutGroup, motion } from "motion/react"
-import { ChevronDown, Clapperboard, Images, Minus, Plus, Sparkles, Volume2, VolumeX } from "lucide-react"
+import { ChevronDown, Clapperboard, Images, Loader2, Minus, Plus, Sparkles, Volume2, VolumeX } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { GlassCard } from "@/components/Glass"
 import { MediaInputs, pasteTargetFor, slotsFor } from "@/components/studio/MediaInputs"
@@ -7,6 +7,7 @@ import { useToast } from "@/components/Toaster"
 import { lastActiveZone } from "@/components/upload/Media"
 import { ConfirmCost, EstimatePanel, guardFor, useEstimate } from "@/components/studio/Estimate"
 import type { Stats } from "@/lib/api"
+import { submitJobs } from "@/lib/jobs"
 import { addFiles, kindOf, useMediaState } from "@/lib/media"
 import type { EstimateInput } from "@shared/pricing"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
@@ -292,16 +293,48 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
   const guard = guardFor(est.result?.total ?? null, spend)
   const [confirming, setConfirming] = useState(false)
 
+  const [sending, setSending] = useState(false)
+
   function tryGenerate() {
-    if (guard.overDay || guard.needsConfirm) {
+    if (sending) return
+    if (guard.overDay) {
+      toast({ title: "Limite diário", detail: `Restam US$ ${(guard.remainingDay ?? 0).toFixed(2).replace(".", ",")} hoje.`, tone: "error" })
+      return
+    }
+    if (guard.needsConfirm) {
       setConfirming(true)
       return
     }
-    fakeSubmit()
+    void send(false)
   }
-  function fakeSubmit() {
+
+  /** Junta as URLs já enviadas de cada zona do modo e manda pro Worker criar os jobs. */
+  async function send(confirmed: boolean) {
     setConfirming(false)
-    toast({ title: "A geração entra na fase 2", detail: "Nada foi enviado e nada foi cobrado." })
+    const slots = slotsFor(mode.id, model)
+    const media: Record<string, { url: string; durationSec?: number }[]> = {}
+    for (const { key } of slots) {
+      const items = (mediaState[key] ?? []).filter((it) => it.status !== "error")
+      if (items.some((it) => it.status !== "done")) {
+        toast({ title: "Espere o envio terminar", detail: "Ainda tem referência subindo.", tone: "error" })
+        return
+      }
+      if (items.length) media[key] = items.map((it) => ({ url: it.publicUrl!, ...(it.meta.duration ? { durationSec: it.meta.duration } : {}) }))
+    }
+    setSending(true)
+    const res = await submitJobs({ ...estimateInput, prompt, media, confirmed })
+    setSending(false)
+    if (res.ok) {
+      toast({
+        title: res.jobs.length > 1 ? `${res.jobs.length} jobs enviados` : "Job enviado",
+        detail: `${model} · ${summary.split(" · ").slice(1).join(" · ")}`,
+        tone: "success",
+      })
+    } else if (res.needsConfirm) {
+      setConfirming(true)
+    } else {
+      toast({ title: "Não enviado", detail: res.error, tone: "error" })
+    }
   }
 
   const summary = useMemo(() => {
@@ -502,6 +535,8 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
           <motion.button
             type="button"
             onClick={tryGenerate}
+            disabled={sending}
+            aria-busy={sending}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={spring}
@@ -513,13 +548,13 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
             )}
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(110deg,transparent_30%,rgb(255_255_255/0.35)_50%,transparent_70%)] transition-transform duration-700 ease-out group-hover:translate-x-full" />
-            <Sparkles className="size-5" strokeWidth={2} />
-            Gerar {takes > 1 ? `${takes} takes` : ""}
+            {sending ? <Loader2 className="size-5 animate-spin" /> : <Sparkles className="size-5" strokeWidth={2} />}
+            {sending ? "Enviando…" : `Gerar${takes > 1 ? ` ${takes} takes` : ""}`}
             <kbd className="ml-2 rounded-full bg-black/15 px-3 py-2 font-mono text-xs font-medium">{MOD} ↵</kbd>
           </motion.button>
         </div>
       </div>
-      <ConfirmCost open={confirming} total={est.result?.total ?? null} guard={guard} onCancel={() => setConfirming(false)} onConfirm={fakeSubmit} />
+      <ConfirmCost open={confirming} total={est.result?.total ?? null} guard={guard} onCancel={() => setConfirming(false)} onConfirm={() => void send(true)} />
     </GlassCard>
   )
 }
