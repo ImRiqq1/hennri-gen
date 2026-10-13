@@ -6,8 +6,8 @@ import { Composer, ModeTabs } from "@/components/studio/Composer"
 import { GalleryPeek } from "@/components/studio/GalleryPeek"
 import { JobQueue } from "@/components/studio/JobQueue"
 import { SpendCard, SystemCard } from "@/components/studio/SideCards"
-import { useToast } from "@/components/Toaster"
-import { useLiveJobs } from "@/lib/jobs"
+import { useJobs } from "@/components/JobsProvider"
+import { isLive } from "@/lib/jobs"
 import { api, useStudio } from "@/lib/studio"
 import { getStats } from "@/lib/api"
 import { MODES } from "@/lib/modes"
@@ -25,13 +25,12 @@ export function Criar() {
   const settings = useStudio(api.settings).data
   const projects = useStudio(api.projects).data
   const presets = useStudio(api.presets).data
-  const toast = useToast()
-  // Fila ao vivo; quando um job termina, avisa e atualiza o gasto.
-  const jobs = useLiveJobs((j) => {
-    refreshStats()
-    if (j.status === "saved") toast({ title: "Pronto", detail: `${j.model_id} salvo na galeria.`, tone: "success" })
-    else if (j.status === "failed" || j.status === "nsfw") toast({ title: "Não gerou", detail: j.error ?? "Falhou (não cobrado).", tone: "error" })
-  })
+  // Fila ao vivo (polling único no JobsProvider); quando algo termina, atualiza o gasto.
+  const jobs = useJobs()
+  const finished = (jobs ?? []).filter((j) => !isLive(j.status)).length
+  useEffect(() => {
+    if (finished) refreshStats()
+  }, [finished, refreshStats])
 
   // 1–8 trocam de modo.
   useEffect(() => {

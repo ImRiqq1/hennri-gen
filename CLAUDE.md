@@ -81,3 +81,12 @@ Sempre responder e escrever em português do Brasil.
 - Jobs guardam `project_id` (projeto ativo, senão "sem-projeto") e `preset_id` (preset do MISE.IA usado). No pedido: `projectId`/`templateId` — não confundir com `presetId`, que é o estilo do Restyle.
 - O Composer recebe `settings/projects/presets` já carregados (o Criar mostra skeleton antes) e usa os padrões da Config. `templateVars`/`fillTemplate` em `src/web/lib/studio.ts`; mudanças disparam `STUDIO_CHANGED`.
 - Páginas: `/presets` (G P), `/custos` (G U), `/config` (G ,). Custos tem alternativa em tabela.
+
+## Fase 5 (13/10/2026)
+
+- **Registro de modelos** `src/shared/models.ts` (`MODEL_SPECS[modo][modelo]`): endpoint, duração min/máx, resoluções (e se vão no corpo), proporções, áudio, prompt obrigatório. O Composer, a estimativa (`endpointFor`) e o envio (`buildRequest`) leem daqui. Modelo novo = entrada no registro + `case` no `buildRequest`.
+- Pegadinhas do schema: Kling 3.0 std/pro/4k não têm `resolution` e o áudio é `sound: "on"|"off"` (3–15 s); Turbo tem `resolution` e não tem áudio nem último frame; Kling O3 usa `mode: std|pro|4k` (= 720p/1080p/4K) e `first_frame_url`/`last_frame_url`; MiniMax H3 é sempre 2K (5–15 s); Wan 3.0 aceita 2–30 s.
+- A estimativa monta o corpo com `estimateRequest` (= `buildRequest` com mídia de mentira) — nunca diverge do envio. Kling/Wan/MiniMax devolvem `usd` exato. Se a Higgsfield recusar (ex.: 409 "temporarily unavailable" no O3 4K em 13/10), cai na tabela e o `basis` mostra o motivo.
+- **Linhagem**: `parent_job_id` + `parent_relation` (refeito, editado, estendido, continuação, referência, genjutsu — migration 0003). A Galeria grava a origem via `setOrigin`/`prefillFrom(job, relação)`; `GET /api/jobs/:id/lineage` devolve ancestrais e descendentes.
+- **Comparar**: Galeria → Comparar → 2 a 4 vídeos prontos; o primeiro manda no tempo e os outros são ressincronizados se derrapam > 0,15 s.
+- **Avisos**: `JobsProvider` (no Shell) faz o polling único de jobs pro site todo e avisa ao terminar (toast + som sintetizado + notificação do sistema com a aba oculta). Preferências por navegador em `localStorage` `mise:avisos`, editáveis em Config. Com a aba oculta o polling pausa (o cron do servidor continua).

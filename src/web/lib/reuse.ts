@@ -1,6 +1,6 @@
 // Reaproveitar um resultado: usar como referência, continuar a cena, refazer editando.
 
-import type { JobView } from "@shared/generation"
+import type { JobView, Relation } from "@shared/generation"
 import { addFiles, type SlotRules } from "@/lib/media"
 
 const PREFILL_KEY = "mise:prefill"
@@ -17,6 +17,9 @@ export type Prefill = {
   /** fase 4: projeto e preset do MISE.IA que originaram o pedido */
   projectId?: string
   templateId?: string
+  /** fase 5: linhagem */
+  parentJobId?: string
+  parentRelation?: Relation
 }
 
 /** Guarda o pedido pra tela Criar abrir já preenchida (refazer editando). */
@@ -42,9 +45,14 @@ export function takePrefill(modeId: string): Prefill | null {
   }
 }
 
-export function prefillFrom(job: JobView): Prefill {
+export function prefillFrom(job: JobView, relation: Relation = "editado"): Prefill {
   const p = job.params as { resolution?: string; duration?: number; aspect?: string; audio?: boolean; presetId?: string | null }
-  return { modeId: job.mode, model: job.model_id, prompt: job.prompt ?? "", ...p }
+  return { modeId: job.mode, model: job.model_id, prompt: job.prompt ?? "", ...p, projectId: job.project_id, parentJobId: job.id, parentRelation: relation }
+}
+
+/** Só a origem (pra quando o resultado vira mídia de outro modo). */
+export function setOrigin(job: JobView, modeId: string, relation: Relation) {
+  setPrefill({ modeId, model: "", prompt: "", projectId: job.project_id, parentJobId: job.id, parentRelation: relation })
 }
 
 /**

@@ -1,5 +1,6 @@
 import { Check, ExternalLink, Loader2 } from "lucide-react"
 import { useState, type ReactNode } from "react"
+import { chime, readAlertPrefs, saveAlertPrefs } from "@/components/JobsProvider"
 import { Eyebrow, GlassCard } from "@/components/Glass"
 import { useToast } from "@/components/Toaster"
 import { ASPECTS } from "@/lib/modes"
@@ -181,6 +182,8 @@ function ConfigForm({ initial }: { initial: Settings }) {
         </Row>
       </GlassCard>
 
+      <AlertsCard />
+
       <GlassCard className="flex flex-wrap items-center justify-between gap-3 p-4">
         <a href="https://console.higgsfield.ai" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-text-2 hover:text-text">
           <ExternalLink className="size-4" /> Saldo e cobrança no console da Higgsfield
@@ -199,5 +202,44 @@ function ConfigForm({ initial }: { initial: Settings }) {
         </div>
       </GlassCard>
     </div>
+  )
+}
+
+/** Avisos ficam no navegador (cada aparelho decide), não no banco. */
+function AlertsCard() {
+  const [prefs, setPrefs] = useState(readAlertPrefs)
+  const [perm, setPerm] = useState(() => ("Notification" in window ? Notification.permission : "unsupported"))
+  const toast = useToast()
+  const update = (p: typeof prefs) => {
+    setPrefs(p)
+    saveAlertPrefs(p)
+  }
+  async function toggleNotify(on: boolean) {
+    if (on && perm !== "granted") {
+      if (!("Notification" in window)) return toast({ title: "Este navegador não tem notificações", tone: "error" })
+      const r = await Notification.requestPermission()
+      setPerm(r)
+      if (r !== "granted") return toast({ title: "Permissão negada", detail: "Libere as notificações do site nas configurações do navegador.", tone: "error" })
+    }
+    update({ ...prefs, notify: on })
+  }
+  return (
+    <GlassCard className="px-5 py-1">
+      <p className="label pt-4">Avisos neste navegador</p>
+      <Row label="Som quando um job termina" hint="Dois toques = pronto; um grave = não gerou.">
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => chime(true)} className="text-xs text-text-3 hover:text-text">
+            testar
+          </button>
+          <Seg label="Som" options={["desligado", "ligado"] as const} value={prefs.sound ? "ligado" : "desligado"} onChange={(v) => update({ ...prefs, sound: v === "ligado" })} />
+        </div>
+      </Row>
+      <Row
+        label="Notificação do sistema"
+        hint={perm === "denied" ? "Bloqueada no navegador — libere nas configurações do site." : "Aparece quando a aba está em segundo plano; clicar abre a Galeria."}
+      >
+        <Seg label="Notificação" options={["desligado", "ligado"] as const} value={prefs.notify && perm === "granted" ? "ligado" : "desligado"} onChange={(v) => void toggleNotify(v === "ligado")} />
+      </Row>
+    </GlassCard>
   )
 }

@@ -50,16 +50,16 @@ export function JobCard({ job }: { job: JobView }) {
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className={cn("overflow-hidden rounded-[18px] border bg-surface", bad ? "border-danger/50" : "border-line")}
     >
-      {job.status === "saved" && job.output_url && (
-        isVideo ? (
-          <VideoTile src={job.output_url} className="aspect-video rounded-none border-0" label={job.prompt ?? "vídeo gerado"} />
-        ) : (
-          <img src={job.output_url} alt={job.prompt ?? "imagem gerada"} className="aspect-video w-full object-cover" />
-        )
-      )}
       <div className="p-3">
         <div className="flex items-start gap-2.5">
-          {!(job.status === "saved" && job.output_url) && (
+          {job.status === "saved" && job.output_url ? (
+            // miniatura (toca no hover); o vídeo grande fica na Galeria
+            isVideo ? (
+              <VideoTile src={job.output_url} className="aspect-video w-16 shrink-0 rounded-lg" label={job.prompt ?? job.model_id} />
+            ) : (
+              <img src={job.output_url} alt="" className="aspect-video w-16 shrink-0 rounded-lg object-cover" />
+            )
+          ) : (
             <span className="relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-xl bg-surface-2 text-text-3">
               {thumb ? <img src={thumb} alt="" className="size-full object-cover" /> : <span className="font-mono text-[11px]">{mode?.short ?? "—"}</span>}
               {live && <span className="absolute inset-0 animate-pulse-soft bg-accent/15" />}

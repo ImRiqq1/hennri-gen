@@ -209,7 +209,8 @@ export function Composer({
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0]
   // "Refazer editando" / "Continuar cena" da Galeria deixam o pedido pronto (vale uma vez)
   const [prefill] = useState(() => takePrefill(modeId))
-  const [modelChoice, setModel] = useState(prefill?.model ?? mode.models[0].name)
+  const [modelChoice, setModel] = useState(prefill?.model || mode.models[0].name)
+  const [origin] = useState(prefill?.parentJobId ? { id: prefill.parentJobId, relation: prefill.parentRelation } : null)
   const [prompt, setPrompt] = useState(prefill?.prompt ?? "")
   const [promptOn, setPromptOn] = useState(false)
   const [preset, setPreset] = useState<{ id: string; name: string } | null>(prefill?.presetId ? { id: prefill.presetId, name: "estilo anterior" } : null)
@@ -359,7 +360,15 @@ export function Composer({
       if (items.length) media[key] = items.map((it) => ({ url: it.publicUrl!, ...(it.meta.duration ? { durationSec: it.meta.duration } : {}) }))
     }
     setSending(true)
-    const res = await submitJobs({ ...estimateInput, prompt, media, confirmed, projectId, templateId })
+    const res = await submitJobs({
+      ...estimateInput,
+      prompt,
+      media,
+      confirmed,
+      projectId,
+      templateId,
+      ...(origin ? { parentJobId: origin.id, parentRelation: origin.relation } : {}),
+    })
     setSending(false)
     if (res.ok) {
       toast({

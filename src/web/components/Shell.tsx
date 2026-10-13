@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { LogoAssinatura, LogoSimbolo } from "@/brand/Logo"
 import { Ambient } from "@/components/Ambient"
+import { JobsProvider, LiveDot } from "@/components/JobsProvider"
 import { CommandCenter, useCommandCenter } from "@/components/CommandCenter"
 import { AccentPicker, ThemeToggle } from "@/components/ThemeControls"
 import { isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
@@ -76,6 +77,7 @@ function SideItem({ item, active, collapsed, onNavigate }: { item: NavItem; acti
       {active && <motion.span layoutId="side-active" transition={spring} className="absolute inset-0 rounded-full bg-invert" />}
       <span className="relative grid size-11 shrink-0 place-items-center">
         <Icon className={cn("size-[18px] transition-transform duration-200 group-hover:scale-110", active && "text-invert-ink")} strokeWidth={1.7} />
+        {item.to === "/criar" && <LiveDot className="top-2 right-2" />}
         {disabled && collapsed && <span className="absolute top-2.5 right-2.5 size-1.5 rounded-full bg-text-3" />}
       </span>
       {!collapsed && (
@@ -375,6 +377,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <CommandCenter>
+      <JobsProvider>
       <div className="flex min-h-dvh gap-3 p-3 sm:gap-4 sm:p-4">
         <Ambient />
         <Sidebar collapsed={collapsed} onToggle={toggle} />
@@ -385,6 +388,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <Dock />
         <Drawer open={drawer} onClose={() => setDrawer(false)} />
       </div>
+      </JobsProvider>
     </CommandCenter>
   )
 }
