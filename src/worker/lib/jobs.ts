@@ -13,6 +13,7 @@ export type JobRow = {
   id: string
   batch_id: string | null
   parent_job_id: string | null
+  parent_relation: string | null
   model_id: string
   mode: string
   prompt: string | null
@@ -55,6 +56,7 @@ export function toView(r: JobRow): JobView {
     id: r.id,
     batch_id: r.batch_id,
     parent_job_id: r.parent_job_id,
+    parent_relation: r.parent_relation,
     model_id: r.model_id,
     mode: r.mode,
     prompt: r.prompt,
@@ -139,6 +141,7 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
     ? await env.DB.prepare(`SELECT id FROM projects WHERE id = ?1 AND archived = 0`).bind(req.projectId).first<{ id: string }>()
     : null
   const template = req.templateId ? await env.DB.prepare(`SELECT id FROM presets WHERE id = ?1`).bind(req.templateId).first<{ id: string }>() : null
+  const parent = req.parentJobId ? await env.DB.prepare(`SELECT id FROM jobs WHERE id = ?1`).bind(req.parentJobId).first<{ id: string }>() : null
 
   const now = Date.now()
   const batch = crypto.randomUUID()
@@ -156,8 +159,9 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
     ids.map((id, i) =>
       env.DB.prepare(
         `INSERT INTO jobs (id, batch_id, model_id, mode, prompt, params_json, refs_json, status,
-           estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at, project_id, preset_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'waiting_slot', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
+           estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at, project_id, preset_id,
+           parent_job_id, parent_relation)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'waiting_slot', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)`,
       ).bind(
         id,
         batch,
@@ -174,6 +178,8 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
         now + i, // ordem estável entre takes
         project?.id ?? "sem-projeto",
         template?.id ?? null,
+        parent?.id ?? null,
+        parent ? (req.parentRelation ?? "referência") : null,
       ),
     ),
   )
@@ -376,9 +382,9 @@ export async function redoJob(env: Env, src: JobRow, confirmed: boolean, ctx: Ct
 
   const id = crypto.randomUUID()
   await env.DB.prepare(
-    `INSERT INTO jobs (id, batch_id, parent_job_id, project_id, model_id, mode, prompt, params_json, refs_json, status,
+    `INSERT INTO jobs (id, batch_id, parent_job_id, parent_relation, project_id, model_id, mode, prompt, params_json, refs_json, status,
        estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at)
-     SELECT ?1, ?1, id, project_id, model_id, mode, prompt, params_json, refs_json, 'waiting_slot',
+     SELECT ?1, ?1, id, 'refeito', project_id, model_id, mode, prompt, params_json, refs_json, 'waiting_slot',
        estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, ?2
      FROM jobs WHERE id = ?3`,
   )

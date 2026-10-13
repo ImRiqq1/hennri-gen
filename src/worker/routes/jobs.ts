@@ -1,6 +1,6 @@
 import { Hono } from "hono"
 import { z } from "zod"
-import type { GenerateRequest } from "../../shared/generation"
+import { RELATIONS, type GenerateRequest } from "../../shared/generation"
 import { cancelJob, createJobs, redoJob, refreshJob, toView, type JobRow } from "../lib/jobs"
 import type { AppEnv } from "../types"
 import { EstimateBody } from "./estimate"
@@ -12,6 +12,8 @@ const GenerateBody = EstimateBody.extend({
   confirmed: z.boolean().optional(),
   projectId: z.string().max(64).optional(),
   templateId: z.string().max(64).optional(),
+  parentJobId: z.string().max(64).optional(),
+  parentRelation: z.enum(RELATIONS).optional(),
 })
 
 const ACTIVE = "('waiting_slot','submitting','queued','in_progress','completed','saving')"
@@ -78,6 +80,35 @@ export const jobs = new Hono<AppEnv>()
     await refreshJob(c.env, job, c.executionCtx)
     const fresh = await c.env.DB.prepare(`SELECT * FROM jobs WHERE id = ?1`).bind(job.id).first<JobRow>()
     return c.json({ job: toView(fresh!) })
+  })
+
+  /** Linhagem: ancestrais (até a raiz) + descendentes diretos e netos. */
+  .get("/:id/lineage", async (c) => {
+    const id = c.req.param("id")
+    const up = await c.env.DB.prepare(
+      `WITH RECURSIVE anc(id, depth) AS (
+         SELECT parent_job_id, 1 FROM jobs WHERE id = ?1 AND parent_job_id IS NOT NULL
+         UNION ALL
+         SELECT j.parent_job_id, a.depth + 1 FROM jobs j JOIN anc a ON j.id = a.id WHERE j.parent_job_id IS NOT NULL AND a.depth < 20
+       )
+       SELECT j.*, a.depth FROM anc a JOIN jobs j ON j.id = a.id ORDER BY a.depth DESC`,
+    )
+      .bind(id)
+      .all<JobRow & { depth: number }>()
+    const down = await c.env.DB.prepare(
+      `WITH RECURSIVE des(id, depth) AS (
+         SELECT id, 1 FROM jobs WHERE parent_job_id = ?1
+         UNION ALL
+         SELECT j.id, d.depth + 1 FROM jobs j JOIN des d ON j.parent_job_id = d.id WHERE d.depth < 3
+       )
+       SELECT j.*, d.depth FROM des d JOIN jobs j ON j.id = d.id ORDER BY d.depth, j.created_at LIMIT 40`,
+    )
+      .bind(id)
+      .all<JobRow & { depth: number }>()
+    return c.json({
+      ancestors: up.results.map((r) => ({ ...toView(r), depth: r.depth })),
+      descendants: down.results.map((r) => ({ ...toView(r), depth: r.depth })),
+    })
   })
 
   /** Favoritar / desfavoritar. */

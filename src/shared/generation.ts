@@ -15,7 +15,13 @@ export type GenerateRequest = EstimateInput & {
   projectId?: string
   /** preset do MISE.IA usado pra montar o pedido (não confundir com presetId do Restyle) */
   templateId?: string
+  /** linhagem: de qual job este veio e como */
+  parentJobId?: string
+  parentRelation?: Relation
 }
+
+export const RELATIONS = ["refeito", "editado", "estendido", "continuação", "referência", "genjutsu"] as const
+export type Relation = (typeof RELATIONS)[number]
 
 const urls = (m: Record<string, MediaRef[]>, key: string) => (m[key] ?? []).map((x) => x.url)
 const o3Mode = (res: string) => (res === "4K" ? "4k" : res === "1080p" ? "pro" : "std")
@@ -188,6 +194,7 @@ export type JobView = {
   id: string
   batch_id: string | null
   parent_job_id: string | null
+  parent_relation: string | null
   model_id: string
   mode: string
   prompt: string | null
