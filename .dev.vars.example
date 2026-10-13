@@ -1,0 +1,8 @@
+# Copie para .dev.vars (que é ignorado pelo git) e preencha.
+# Em produção, a chave vai como secret: npx wrangler secret put HF_CREDENTIALS
+
+# Formato id:secret, gerado em console.higgsfield.ai
+HF_CREDENTIALS=
+
+# Só no desenvolvimento local: pula a checagem do Cloudflare Access em localhost.
+DEV_BYPASS_ACCESS=1
