@@ -28,3 +28,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# secrets de produção (gerados na hora do deploy e apagados)
+.prod.secrets

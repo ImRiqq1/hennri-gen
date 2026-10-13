@@ -22,9 +22,7 @@
     {
       "binding": "DB",
       "database_name": "hennri-gen-db",
-      // Placeholder até criar o banco remoto (wrangler d1 create hennri-gen-db).
-      // O wrangler dev --local funciona com qualquer valor aqui.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "c9d069c2-f9b2-45e4-aa79-30bcf91af3ae",
       "migrations_dir": "migrations"
     }
   ],
