@@ -29,13 +29,13 @@ type NavItem = { to: string; label: string; icon: LucideIcon; fase: number | nul
 const NAV: NavItem[] = [
   { to: "/", label: "Início", icon: Home, fase: null, keys: "G H" },
   { to: "/criar", label: "Criar", icon: Sparkles, fase: null, keys: "G C" },
-  { to: "/galeria", label: "Galeria", icon: Images, fase: 3 },
+  { to: "/galeria", label: "Galeria", icon: Images, fase: null, keys: "G G" },
   { to: "/presets", label: "Presets", icon: Layers, fase: 4 },
   { to: "/custos", label: "Custos", icon: Wallet, fase: 4 },
   { to: "/config", label: "Config", icon: Settings2, fase: 4 },
 ]
 
-const PAGE_TITLES: Record<string, string> = { "/": "Início", "/criar": "Criar" }
+const PAGE_TITLES: Record<string, string> = { "/": "Início", "/criar": "Criar", "/galeria": "Galeria" }
 
 const spring = { type: "spring", stiffness: 420, damping: 36 } as const
 const widthSpring = { type: "spring", stiffness: 380, damping: 38 } as const

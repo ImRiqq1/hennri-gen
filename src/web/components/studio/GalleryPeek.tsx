@@ -1,6 +1,6 @@
 import { motion } from "motion/react"
 import { ArrowUpRight, Clapperboard, Sparkles } from "lucide-react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import type { Stats } from "@/lib/api"
 import { useSavedJobs } from "@/lib/jobs"
@@ -37,12 +37,13 @@ function EmptyFrames() {
 export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
   const saved = stats.kind === "ok" ? stats.data.gallery.saved : null
   const recent = useSavedJobs(6)
+  const navigate = useNavigate()
   return (
     <GlassCard
       delay={0.32}
       className="p-5"
       corner={
-        <NotchButton disabled title="Galeria chega na fase 3" aria-label="Abrir galeria (fase 3)">
+        <NotchButton aria-label="Abrir a Galeria" title="Abrir a Galeria" onClick={() => navigate("/galeria")}>
           <ArrowUpRight className="size-[18px]" strokeWidth={1.8} />
         </NotchButton>
       }

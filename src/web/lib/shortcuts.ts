@@ -43,6 +43,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
     items: [
       { keys: ["G", "H"], label: "Ir para Início" },
       { keys: ["G", "C"], label: "Ir para Criar" },
+      { keys: ["G", "G"], label: "Ir para Galeria" },
       { keys: ["N"], label: "Novo job (abre Criar no prompt)" },
     ],
   },

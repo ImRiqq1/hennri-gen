@@ -121,6 +121,7 @@ export const FINAL: JobStatus[] = ["failed", "nsfw", "canceled", "saved"]
 export type JobView = {
   id: string
   batch_id: string | null
+  parent_job_id: string | null
   model_id: string
   mode: string
   prompt: string | null

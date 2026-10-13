@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/theme/theme"
 // Cada página vira um pedaço de JS separado: a Início não baixa o código de upload do Criar.
 const Inicio = lazy(() => import("@/pages/Inicio").then((m) => ({ default: m.Inicio })))
 const Criar = lazy(() => import("@/pages/Criar").then((m) => ({ default: m.Criar })))
+const Galeria = lazy(() => import("@/pages/Galeria").then((m) => ({ default: m.Galeria })))
 const NaoEncontrada = lazy(() => import("@/pages/NaoEncontrada").then((m) => ({ default: m.NaoEncontrada })))
 
 function PageSkeleton() {
@@ -38,6 +39,7 @@ export default function App() {
                   <Routes location={location}>
                     <Route path="/" element={<Inicio />} />
                     <Route path="/criar" element={<Criar />} />
+                    <Route path="/galeria" element={<Galeria />} />
                     <Route path="*" element={<NaoEncontrada />} />
                   </Routes>
                 </Suspense>

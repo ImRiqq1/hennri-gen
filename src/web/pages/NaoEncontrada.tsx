@@ -4,7 +4,6 @@ import { LogoSimbolo } from "@/brand/Logo"
 import { GlassCard } from "@/components/Glass"
 
 const FUTURAS: Record<string, string> = {
-  "/galeria": "A Galeria chega na fase 3.",
   "/presets": "Presets e projetos chegam na fase 4.",
   "/custos": "A tela de custos chega na fase 4.",
   "/config": "As configurações chegam na fase 4.",

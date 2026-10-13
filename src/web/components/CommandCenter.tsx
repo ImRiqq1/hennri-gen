@@ -4,6 +4,7 @@ import {
   Clapperboard,
   CornerDownLeft,
   Home,
+  Images,
   Keyboard,
   Moon,
   Palette as PaletteIcon,
@@ -85,6 +86,7 @@ export function CommandCenter({ children }: { children: ReactNode }) {
         pendingG.current = null
         if (k === "h") navigate("/")
         else if (k === "c") navigate("/criar")
+        else if (k === "g") navigate("/galeria")
         return
       }
       if (k === "g") {
@@ -112,6 +114,7 @@ export function CommandCenter({ children }: { children: ReactNode }) {
     () => [
       { id: "nav-home", group: "Ir para", label: "Início", icon: Home, keys: ["G", "H"], run: () => navigate("/") },
       { id: "nav-criar", group: "Ir para", label: "Criar", icon: Sparkles, keys: ["G", "C"], run: () => navigate("/criar") },
+      { id: "nav-galeria", group: "Ir para", label: "Galeria", icon: Images, keys: ["G", "G"], run: () => navigate("/galeria") },
       ...MODES.map((m, i) => ({
         id: `mode-${m.id}`,
         group: "Novo job",

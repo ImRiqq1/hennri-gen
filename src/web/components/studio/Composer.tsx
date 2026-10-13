@@ -8,6 +8,7 @@ import { lastActiveZone } from "@/components/upload/Media"
 import { ConfirmCost, EstimatePanel, guardFor, useEstimate } from "@/components/studio/Estimate"
 import type { Stats } from "@/lib/api"
 import { submitJobs } from "@/lib/jobs"
+import { takePrefill } from "@/lib/reuse"
 import { addFiles, kindOf, useMediaState } from "@/lib/media"
 import type { EstimateInput } from "@shared/pricing"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
@@ -187,14 +188,16 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
 
 export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spend"] | null }) {
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0]
-  const [modelChoice, setModel] = useState(mode.models[0].name)
-  const [prompt, setPrompt] = useState("")
+  // "Refazer editando" / "Continuar cena" da Galeria deixam o pedido pronto (vale uma vez)
+  const [prefill] = useState(() => takePrefill(modeId))
+  const [modelChoice, setModel] = useState(prefill?.model ?? mode.models[0].name)
+  const [prompt, setPrompt] = useState(prefill?.prompt ?? "")
   const [promptOn, setPromptOn] = useState(false)
-  const [preset, setPreset] = useState<{ id: string; name: string } | null>(null)
-  const [duration, setDuration] = useState(5)
-  const [resolutionChoice, setResolution] = useState("720p")
-  const [aspect, setAspect] = useState("16:9")
-  const [audio, setAudio] = useState(false)
+  const [preset, setPreset] = useState<{ id: string; name: string } | null>(prefill?.presetId ? { id: prefill.presetId, name: "estilo anterior" } : null)
+  const [duration, setDuration] = useState(prefill?.duration ?? 5)
+  const [resolutionChoice, setResolution] = useState(prefill?.resolution ?? "720p")
+  const [aspect, setAspect] = useState(prefill?.aspect ?? "16:9")
+  const [audio, setAudio] = useState(prefill?.audio ?? false)
   const [takes, setTakes] = useState(1)
   const toast = useToast()
   const promptRef = useRef<HTMLTextAreaElement>(null)

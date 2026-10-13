@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from "motion/react"
 import { AlertTriangle, ArrowUpRight, Ban, Check, Copy, Download, Loader2, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import type { JobView } from "@shared/generation"
 import { Dot, Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import { useToast } from "@/components/Toaster"
@@ -137,6 +138,7 @@ export function JobCard({ job }: { job: JobView }) {
 
 /** Fila: em andamento + terminados nos últimos 30 min. */
 export function JobQueue({ jobs }: { jobs: JobView[] | null }) {
+  const navigate = useNavigate()
   const live = (jobs ?? []).filter((j) => isLive(j.status))
   const waiting = live.filter((j) => j.status === "waiting_slot").length
   return (
@@ -144,7 +146,7 @@ export function JobQueue({ jobs }: { jobs: JobView[] | null }) {
       delay={0.14}
       className="p-4"
       corner={
-        <NotchButton disabled title="Fila completa e galeria chegam na fase 3" aria-label="Abrir fila (fase 3)">
+        <NotchButton aria-label="Abrir a Galeria" title="Abrir a Galeria" onClick={() => navigate("/galeria")}>
           <ArrowUpRight className="size-[18px]" strokeWidth={1.8} />
         </NotchButton>
       }

@@ -66,4 +66,11 @@ Sempre responder e escrever em português do Brasil.
 - A credencial só vai pra URLs de `api.higgsfield.ai` (`assertHfUrl` confere status_url/cancel_url).
 - Estimativa (`src/shared/pricing.ts`): Seedance/Genjutsu/Cinema devolvem texto → `parseRates` + fórmula; Kling/SOUL devolvem `usd` exato; senão tabela local marcada "estimado".
 - Uploads: `POST /api/uploads` só pede a URL presignada (S3 da Higgsfield aceita PUT do navegador, CORS liberado); o arquivo vai direto do navegador com progresso (`src/web/lib/media.ts`).
-- Fase 3 ainda falta: webhook, Queue, Cron de recuperação (hoje um job só avança enquanto alguém está com a tela aberta).
+
+## Fase 3 (13/10/2026)
+
+- **Webhook** `POST /api/webhooks/higgsfield?token=…` (fora do Access): token comparado em tempo constante (`WEBHOOK_TOKEN`, secret). O corpo só identifica o job pelo `request_id`; o estado vem de `refreshJob(force)` no `status_url`. Desconhecido/duplicado → 200 sem efeito; envelope inválido → 400; token errado → 401. O envio inclui `?hf_webhook=` só quando `PUBLIC_URL` + `WEBHOOK_TOKEN` existem (no dev `PUBLIC_URL` fica vazio no `.dev.vars`).
+- **Queue** `hennri-gen-save` (binding `SAVE_QUEUE`): `completed` → mensagem → consumer chama `saveOutput`; se continuar `completed` (falhou), `retry` em 30 s. Sem binding, cai no `waitUntil`.
+- **Cron** `* * * * *` → `recoverAll`: revisa jobs vivos sem consulta há 20 s, reenvia `submitting`, refaz cópias paradas e ocupa vagas. No dev: `curl "localhost:8788/cdn-cgi/handler/scheduled?cron=*+*+*+*+*"` (o `/__scheduled` é engolido pelos assets).
+- **Galeria** `/galeria`: filtros (status, modo, favoritos, busca no prompt), paginação por cursor (`before`), detalhe com refazer igual (`POST /api/jobs/:id/redo`, passa pelos limites), refazer editando (`sessionStorage` → `takePrefill` no Composer), usar como referência (baixa do R2 e sobe de novo pra Higgsfield) e continuar cena (último frame via `<video>`+canvas → `i2v:first`).
+- O painel do navegador do app não desmonta páginas na animação de saída (AnimatePresence): teste navegação entre páginas no Chrome headless (CDP), não no painel.
