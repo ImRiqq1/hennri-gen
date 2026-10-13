@@ -8,6 +8,8 @@ import { lastActiveZone } from "@/components/upload/Media"
 import { ConfirmCost, EstimatePanel, guardFor, useEstimate } from "@/components/studio/Estimate"
 import type { Stats } from "@/lib/api"
 import { submitJobs } from "@/lib/jobs"
+import { templateVars, type Preset, type Project, type Settings } from "@/lib/studio"
+import { PresetPicker, ProjectPicker, SavePresetDialog, VarsDialog } from "@/components/studio/PresetDialogs"
 import { takePrefill } from "@/lib/reuse"
 import { addFiles, kindOf, useMediaState } from "@/lib/media"
 import type { EstimateInput } from "@shared/pricing"
@@ -186,7 +188,20 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   )
 }
 
-export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spend"] | null }) {
+export function Composer({
+  modeId,
+  spend,
+  settings,
+  projects,
+  presets,
+}: {
+  modeId: string
+  spend: Stats["spend"] | null
+  /** padrões (Config) — o Criar só monta o Composer depois de carregar */
+  settings: Settings
+  projects: Project[]
+  presets: Preset[]
+}) {
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0]
   // "Refazer editando" / "Continuar cena" da Galeria deixam o pedido pronto (vale uma vez)
   const [prefill] = useState(() => takePrefill(modeId))
@@ -194,10 +209,14 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
   const [prompt, setPrompt] = useState(prefill?.prompt ?? "")
   const [promptOn, setPromptOn] = useState(false)
   const [preset, setPreset] = useState<{ id: string; name: string } | null>(prefill?.presetId ? { id: prefill.presetId, name: "estilo anterior" } : null)
-  const [duration, setDuration] = useState(prefill?.duration ?? 5)
-  const [resolutionChoice, setResolution] = useState(prefill?.resolution ?? "720p")
-  const [aspect, setAspect] = useState(prefill?.aspect ?? "16:9")
-  const [audio, setAudio] = useState(prefill?.audio ?? false)
+  const [duration, setDuration] = useState(prefill?.duration ?? settings.padrao_duracao)
+  const [resolutionChoice, setResolution] = useState(prefill?.resolution ?? settings.padrao_resolucao)
+  const [aspect, setAspect] = useState(prefill?.aspect ?? settings.padrao_proporcao)
+  const [audio, setAudio] = useState(prefill?.audio ?? settings.padrao_audio)
+  const [projectId, setProjectId] = useState(prefill?.projectId ?? "sem-projeto")
+  const [templateId, setTemplateId] = useState<string | undefined>(prefill?.templateId)
+  const [varsFor, setVarsFor] = useState<Preset | null>(null)
+  const [saveOpen, setSaveOpen] = useState(0)
   const [takes, setTakes] = useState(1)
   const toast = useToast()
   const promptRef = useRef<HTMLTextAreaElement>(null)
@@ -325,7 +344,7 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
       if (items.length) media[key] = items.map((it) => ({ url: it.publicUrl!, ...(it.meta.duration ? { durationSec: it.meta.duration } : {}) }))
     }
     setSending(true)
-    const res = await submitJobs({ ...estimateInput, prompt, media, confirmed })
+    const res = await submitJobs({ ...estimateInput, prompt, media, confirmed, projectId, templateId })
     setSending(false)
     if (res.ok) {
       toast({
@@ -349,6 +368,24 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
     if (mode.audio) parts.push(audio ? "com áudio" : "sem áudio")
     return parts.join(" · ")
   }, [model, mode, duration, resolution, aspect, audio, isGenjutsu, preset])
+
+  /** Aplica um preset: modelo, parâmetros e prompt base (pedindo as {{variáveis}} se houver). */
+  function applyPreset(p: Preset, filledPrompt?: string) {
+    if (templateVars(p.prompt_template).length && filledPrompt === undefined) {
+      setVarsFor(p)
+      return
+    }
+    setVarsFor(null)
+    setModel(p.model_id)
+    if (p.params.resolution) setResolution(p.params.resolution)
+    if (p.params.duration) setDuration(p.params.duration)
+    if (p.params.aspect) setAspect(p.params.aspect)
+    if (typeof p.params.audio === "boolean") setAudio(p.params.audio)
+    if (p.prompt_template !== null) setPrompt(filledPrompt ?? p.prompt_template)
+    if (p.project_id) setProjectId(p.project_id)
+    setTemplateId(p.id)
+    toast({ title: "Preset aplicado", detail: p.name })
+  }
 
   const promptBox = (
     <div className="group relative flex flex-1 flex-col rounded-[20px] border border-line bg-surface transition-colors focus-within:border-line-2 focus-within:bg-surface-2">
@@ -394,7 +431,11 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
     <GlassCard delay={0.08} className="flex flex-col gap-3.5 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
         {isGenjutsu ? <GenjutsuTabs value={model} onChange={setModel} /> : <ModelPicker mode={mode} model={model} onChange={setModel} />}
-        <div className="ml-auto flex items-center gap-1 rounded-full bg-surface p-1">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <ProjectPicker projects={projects} value={projectId} onChange={setProjectId} />
+          <PresetPicker presets={presets} modeId={mode.id} onPick={(p) => applyPreset(p)} onSave={() => setSaveOpen((n) => n + 1)} />
+        </div>
+        <div className="flex items-center gap-1 rounded-full bg-surface p-1">
           <button type="button" aria-label="Menos takes" onClick={() => setTakes((t) => Math.max(1, t - 1))} className="grid size-9 place-items-center rounded-full text-text-2 hover:bg-surface-2 hover:text-text">
             <Minus className="size-4" />
           </button>
@@ -557,6 +598,28 @@ export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spen
           </motion.button>
         </div>
       </div>
+      <VarsDialog key={varsFor?.id ?? "nenhum"} preset={varsFor} onClose={() => setVarsFor(null)} onApply={(text) => varsFor && applyPreset(varsFor, text)} />
+      {saveOpen > 0 && (
+        <SavePresetDialog
+          key={saveOpen}
+          open
+          projects={projects}
+          defaultProject={projectId}
+          draft={{
+            model_id: model,
+            mode: mode.id,
+            params: {
+              resolution,
+              ...(mode.duration ? { duration } : {}),
+              ...(mode.aspect ? { aspect } : {}),
+              ...(mode.audio ? { audio } : {}),
+              ...(preset ? { presetId: preset.id } : {}),
+            },
+            prompt,
+          }}
+          onClose={() => setSaveOpen(0)}
+        />
+      )}
       <ConfirmCost open={confirming} total={est.result?.total ?? null} guard={guard} onCancel={() => setConfirming(false)} onConfirm={() => void send(true)} />
     </GlassCard>
   )

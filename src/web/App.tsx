@@ -9,6 +9,9 @@ import { ThemeProvider } from "@/theme/theme"
 const Inicio = lazy(() => import("@/pages/Inicio").then((m) => ({ default: m.Inicio })))
 const Criar = lazy(() => import("@/pages/Criar").then((m) => ({ default: m.Criar })))
 const Galeria = lazy(() => import("@/pages/Galeria").then((m) => ({ default: m.Galeria })))
+const Presets = lazy(() => import("@/pages/Presets").then((m) => ({ default: m.Presets })))
+const Custos = lazy(() => import("@/pages/Custos").then((m) => ({ default: m.Custos })))
+const Config = lazy(() => import("@/pages/Config").then((m) => ({ default: m.Config })))
 const NaoEncontrada = lazy(() => import("@/pages/NaoEncontrada").then((m) => ({ default: m.NaoEncontrada })))
 
 function PageSkeleton() {
@@ -40,6 +43,9 @@ export default function App() {
                     <Route path="/" element={<Inicio />} />
                     <Route path="/criar" element={<Criar />} />
                     <Route path="/galeria" element={<Galeria />} />
+                    <Route path="/presets" element={<Presets />} />
+                    <Route path="/custos" element={<Custos />} />
+                    <Route path="/config" element={<Config />} />
                     <Route path="*" element={<NaoEncontrada />} />
                   </Routes>
                 </Suspense>

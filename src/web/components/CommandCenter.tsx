@@ -5,6 +5,9 @@ import {
   CornerDownLeft,
   Home,
   Images,
+  Layers,
+  Settings2,
+  Wallet,
   Keyboard,
   Moon,
   Palette as PaletteIcon,
@@ -87,6 +90,9 @@ export function CommandCenter({ children }: { children: ReactNode }) {
         if (k === "h") navigate("/")
         else if (k === "c") navigate("/criar")
         else if (k === "g") navigate("/galeria")
+        else if (k === "p") navigate("/presets")
+        else if (k === "u") navigate("/custos")
+        else if (e.key === ",") navigate("/config")
         return
       }
       if (k === "g") {
@@ -115,6 +121,9 @@ export function CommandCenter({ children }: { children: ReactNode }) {
       { id: "nav-home", group: "Ir para", label: "Início", icon: Home, keys: ["G", "H"], run: () => navigate("/") },
       { id: "nav-criar", group: "Ir para", label: "Criar", icon: Sparkles, keys: ["G", "C"], run: () => navigate("/criar") },
       { id: "nav-galeria", group: "Ir para", label: "Galeria", icon: Images, keys: ["G", "G"], run: () => navigate("/galeria") },
+      { id: "nav-presets", group: "Ir para", label: "Presets e projetos", icon: Layers, keys: ["G", "P"], run: () => navigate("/presets") },
+      { id: "nav-custos", group: "Ir para", label: "Custos", icon: Wallet, keys: ["G", "U"], run: () => navigate("/custos") },
+      { id: "nav-config", group: "Ir para", label: "Configurações", icon: Settings2, keys: ["G", ","], run: () => navigate("/config") },
       ...MODES.map((m, i) => ({
         id: `mode-${m.id}`,
         group: "Novo job",

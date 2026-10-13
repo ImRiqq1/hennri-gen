@@ -30,12 +30,12 @@ const NAV: NavItem[] = [
   { to: "/", label: "Início", icon: Home, fase: null, keys: "G H" },
   { to: "/criar", label: "Criar", icon: Sparkles, fase: null, keys: "G C" },
   { to: "/galeria", label: "Galeria", icon: Images, fase: null, keys: "G G" },
-  { to: "/presets", label: "Presets", icon: Layers, fase: 4 },
-  { to: "/custos", label: "Custos", icon: Wallet, fase: 4 },
-  { to: "/config", label: "Config", icon: Settings2, fase: 4 },
+  { to: "/presets", label: "Presets", icon: Layers, fase: null, keys: "G P" },
+  { to: "/custos", label: "Custos", icon: Wallet, fase: null, keys: "G U" },
+  { to: "/config", label: "Config", icon: Settings2, fase: null, keys: "G ," },
 ]
 
-const PAGE_TITLES: Record<string, string> = { "/": "Início", "/criar": "Criar", "/galeria": "Galeria" }
+const PAGE_TITLES: Record<string, string> = { "/": "Início", "/criar": "Criar", "/galeria": "Galeria", "/presets": "Presets", "/custos": "Custos", "/config": "Configurações" }
 
 const spring = { type: "spring", stiffness: 420, damping: 36 } as const
 const widthSpring = { type: "spring", stiffness: 380, damping: 38 } as const
@@ -191,7 +191,7 @@ function SidebarContent({
           {!collapsed && (
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium text-text">Henrique</span>
-              <span className="block truncate font-mono text-[11px] text-text-3">fase 1 · local</span>
+              <span className="block truncate font-mono text-[11px] text-text-3">estúdio pessoal</span>
             </span>
           )}
         </div>

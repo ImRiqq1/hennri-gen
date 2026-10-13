@@ -14,6 +14,9 @@ export type Prefill = {
   aspect?: string
   audio?: boolean
   presetId?: string | null
+  /** fase 4: projeto e preset do MISE.IA que originaram o pedido */
+  projectId?: string
+  templateId?: string
 }
 
 /** Guarda o pedido pra tela Criar abrir já preenchida (refazer editando). */

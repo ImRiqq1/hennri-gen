@@ -74,3 +74,10 @@ Sempre responder e escrever em português do Brasil.
 - **Cron** `* * * * *` → `recoverAll`: revisa jobs vivos sem consulta há 20 s, reenvia `submitting`, refaz cópias paradas e ocupa vagas. No dev: `curl "localhost:8788/cdn-cgi/handler/scheduled?cron=*+*+*+*+*"` (o `/__scheduled` é engolido pelos assets).
 - **Galeria** `/galeria`: filtros (status, modo, favoritos, busca no prompt), paginação por cursor (`before`), detalhe com refazer igual (`POST /api/jobs/:id/redo`, passa pelos limites), refazer editando (`sessionStorage` → `takePrefill` no Composer), usar como referência (baixa do R2 e sobe de novo pra Higgsfield) e continuar cena (último frame via `<video>`+canvas → `i2v:first`).
 - O painel do navegador do app não desmonta páginas na animação de saída (AnimatePresence): teste navegação entre páginas no Chrome headless (CDP), não no painel.
+
+## Fase 4 (13/10/2026)
+
+- Rotas em `src/worker/routes/studio.ts`: `GET/PUT /api/settings` (Zod; diário ≤ mensal), `/api/projects` (o "sem-projeto" não arquiva), `/api/presets` (prompt base com `{{variáveis}}`), `GET /api/costs?days=7|30|90` (dia/semana/mês no fuso de SP, série diária, por modelo e por projeto — só jobs completed/saving/saved).
+- Jobs guardam `project_id` (projeto ativo, senão "sem-projeto") e `preset_id` (preset do MISE.IA usado). No pedido: `projectId`/`templateId` — não confundir com `presetId`, que é o estilo do Restyle.
+- O Composer recebe `settings/projects/presets` já carregados (o Criar mostra skeleton antes) e usa os padrões da Config. `templateVars`/`fillTemplate` em `src/web/lib/studio.ts`; mudanças disparam `STUDIO_CHANGED`.
+- Páginas: `/presets` (G P), `/custos` (G U), `/config` (G ,). Custos tem alternativa em tabela.

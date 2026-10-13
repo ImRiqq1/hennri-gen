@@ -8,6 +8,7 @@ import { JobQueue } from "@/components/studio/JobQueue"
 import { SpendCard, SystemCard } from "@/components/studio/SideCards"
 import { useToast } from "@/components/Toaster"
 import { useLiveJobs } from "@/lib/jobs"
+import { api, useStudio } from "@/lib/studio"
 import { getStats } from "@/lib/api"
 import { MODES } from "@/lib/modes"
 import { isTyping, overlayOpen } from "@/lib/shortcuts"
@@ -21,6 +22,9 @@ export function Criar() {
   const modeId = MODES.some((m) => m.id === params.get("modo")) ? params.get("modo")! : MODES[0].id
   const setModeId = (id: string) => setParams(id === MODES[0].id ? {} : { modo: id }, { replace: true })
   const [stats, refreshStats] = usePoll(getStats, 15_000)
+  const settings = useStudio(api.settings).data
+  const projects = useStudio(api.projects).data
+  const presets = useStudio(api.presets).data
   const toast = useToast()
   // Fila ao vivo; quando um job termina, avisa e atualiza o gasto.
   const jobs = useLiveJobs((j) => {
@@ -69,7 +73,11 @@ export function Criar() {
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px] 2xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-3">
-          <Composer modeId={modeId} spend={stats.kind === "ok" ? stats.data.spend : null} />
+          {settings && projects && presets ? (
+            <Composer modeId={modeId} spend={stats.kind === "ok" ? stats.data.spend : null} settings={settings} projects={projects} presets={presets} />
+          ) : (
+            <span className="skeleton block h-[560px] rounded-[24px]" aria-busy="true" aria-label="Carregando o Criar" />
+          )}
           <GalleryPeek stats={stats} />
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
