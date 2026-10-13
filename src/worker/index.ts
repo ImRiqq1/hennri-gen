@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { requireAccess } from "./middleware/access"
 import { health } from "./routes/health"
+import { stats } from "./routes/stats"
 import type { AppEnv } from "./types"
 
 // Só /api/* chega aqui (run_worker_first); o resto é servido direto pelo binding de assets,
@@ -9,6 +10,7 @@ const app = new Hono<AppEnv>().basePath("/api")
 
 app.use("*", requireAccess)
 app.route("/health", health)
+app.route("/stats", stats)
 
 app.notFound((c) => c.json({ error: "rota não encontrada" }, 404))
 app.onError((err, c) => {
