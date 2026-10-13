@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { z } from "zod"
 import type { GenerateRequest } from "../../shared/generation"
-import { cancelJob, createJobs, refreshJob, toView, type JobRow } from "../lib/jobs"
+import { cancelJob, createJobs, redoJob, refreshJob, toView, type JobRow } from "../lib/jobs"
 import type { AppEnv } from "../types"
 import { EstimateBody } from "./estimate"
 
@@ -35,14 +35,39 @@ export const jobs = new Hono<AppEnv>()
       const pending = await c.env.DB.prepare(`SELECT * FROM jobs WHERE status IN ${ACTIVE} ORDER BY created_at LIMIT 20`).all<JobRow>()
       await Promise.all(pending.results.map((j) => refreshJob(c.env, j, c.executionCtx)))
     }
-    const rows = await (active
-      ? c.env.DB.prepare(`SELECT * FROM jobs WHERE status IN ${ACTIVE} OR completed_at >= ?2 ORDER BY created_at DESC LIMIT ?1`).bind(
-          limit,
-          Date.now() - 30 * 60 * 1000,
-        )
-      : c.env.DB.prepare(`SELECT * FROM jobs ORDER BY created_at DESC LIMIT ?1`).bind(limit)
-    ).all<JobRow>()
-    return c.json({ jobs: rows.results.map(toView) })
+    if (active) {
+      const rows = await c.env.DB.prepare(`SELECT * FROM jobs WHERE status IN ${ACTIVE} OR completed_at >= ?2 ORDER BY created_at DESC LIMIT ?1`)
+        .bind(limit, Date.now() - 30 * 60 * 1000)
+        .all<JobRow>()
+      return c.json({ jobs: rows.results.map(toView) })
+    }
+
+    // Galeria: filtros + paginação por cursor (created_at do último item)
+    const where: string[] = []
+    const args: unknown[] = []
+    const add = (sql: string, v: unknown) => {
+      args.push(v)
+      where.push(sql.replace("?", `?${args.length}`))
+    }
+    const status = c.req.query("status")
+    if (status === "saved") where.push(`status = 'saved'`)
+    else if (status === "failed") where.push(`status IN ('failed','nsfw','canceled')`)
+    const mode = c.req.query("mode")
+    if (mode) add("mode = ?", mode)
+    const model = c.req.query("model")
+    if (model) add("model_id = ?", model)
+    if (c.req.query("favorite") === "1") where.push("favorite = 1")
+    const since = Number(c.req.query("since"))
+    if (since) add("created_at >= ?", since)
+    const before = Number(c.req.query("before"))
+    if (before) add("created_at < ?", before)
+    const q = c.req.query("q")?.trim()
+    if (q) add("prompt LIKE ?", `%${q.replace(/[%_]/g, "")}%`)
+    args.push(limit)
+    const sql = `SELECT * FROM jobs ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY created_at DESC LIMIT ?${args.length}`
+    const rows = await c.env.DB.prepare(sql).bind(...args).all<JobRow>()
+    const items = rows.results.map(toView)
+    return c.json({ jobs: items, next: items.length === limit ? items[items.length - 1].created_at : null })
   })
 
   .get("/:id", async (c) => {
@@ -51,6 +76,24 @@ export const jobs = new Hono<AppEnv>()
     await refreshJob(c.env, job, c.executionCtx)
     const fresh = await c.env.DB.prepare(`SELECT * FROM jobs WHERE id = ?1`).bind(job.id).first<JobRow>()
     return c.json({ job: toView(fresh!) })
+  })
+
+  /** Favoritar / desfavoritar. */
+  .patch("/:id", async (c) => {
+    const body = z.object({ favorite: z.boolean() }).safeParse(await c.req.json().catch(() => null))
+    if (!body.success) return c.json({ error: "pedido inválido" }, 400)
+    const r = await c.env.DB.prepare(`UPDATE jobs SET favorite = ?2 WHERE id = ?1`).bind(c.req.param("id"), body.data.favorite ? 1 : 0).run()
+    return r.meta.changes ? c.json({ ok: true }) : c.json({ error: "job não encontrado" }, 404)
+  })
+
+  /** Refazer igual (geração nova com o mesmo pedido). */
+  .post("/:id/redo", async (c) => {
+    const job = await c.env.DB.prepare(`SELECT * FROM jobs WHERE id = ?1`).bind(c.req.param("id")).first<JobRow>()
+    if (!job) return c.json({ error: "job não encontrado" }, 404)
+    const confirmed = !!(await c.req.json().catch(() => ({})) as { confirmed?: boolean }).confirmed
+    const res = await redoJob(c.env, job, confirmed, c.executionCtx)
+    if (!res.ok) return c.json({ error: res.error, needsConfirm: res.needsConfirm }, res.status)
+    return c.json({ jobs: res.jobs }, 201)
   })
 
   .post("/:id/cancel", async (c) => {

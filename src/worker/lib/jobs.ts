@@ -12,6 +12,7 @@ import { cancelRequest, getStatus, HiggsfieldError, submit } from "./higgsfield"
 export type JobRow = {
   id: string
   batch_id: string | null
+  parent_job_id: string | null
   model_id: string
   mode: string
   prompt: string | null
@@ -51,6 +52,7 @@ export function toView(r: JobRow): JobView {
   return {
     id: r.id,
     batch_id: r.batch_id,
+    parent_job_id: r.parent_job_id,
     model_id: r.model_id,
     mode: r.mode,
     prompt: r.prompt,
@@ -197,7 +199,7 @@ async function sendJob(env: Env, id: string): Promise<boolean> {
   const job = await env.DB.prepare(`SELECT * FROM jobs WHERE id = ?1`).bind(id).first<JobRow>()
   if (!job?.endpoint || !job.request_body_json) return false
   try {
-    const res = await submit(env.HF_CREDENTIALS, job.endpoint, JSON.parse(job.request_body_json), job.id)
+    const res = await submit(env.HF_CREDENTIALS, job.endpoint, JSON.parse(job.request_body_json), job.id, webhookUrl(env))
     await env.DB.prepare(
       `UPDATE jobs SET status = 'queued', hf_request_id = ?2, hf_status_url = ?3, hf_cancel_url = ?4,
          hf_correlation_id = ?5, submitted_at = COALESCE(submitted_at, ?6), error = NULL WHERE id = ?1`,
@@ -230,9 +232,9 @@ async function sendJob(env: Env, id: string): Promise<boolean> {
 }
 
 /** Consulta o status_url (no máx. a cada 3 s por job) e avança o job. */
-export async function refreshJob(env: Env, job: JobRow, ctx: Ctx): Promise<void> {
+export async function refreshJob(env: Env, job: JobRow, ctx: Ctx, force = false): Promise<void> {
   const now = Date.now()
-  if (job.last_checked_at && now - job.last_checked_at < POLL_EVERY_MS && job.status !== "completed") return
+  if (!force && job.last_checked_at && now - job.last_checked_at < POLL_EVERY_MS && job.status !== "completed") return
 
   if (job.status === "submitting") {
     await env.DB.prepare(`UPDATE jobs SET last_checked_at = ?2, attempts = attempts + 1 WHERE id = ?1`).bind(job.id, now).run()
@@ -240,7 +242,7 @@ export async function refreshJob(env: Env, job: JobRow, ctx: Ctx): Promise<void>
     return
   }
   if (job.status === "completed" || (job.status === "saving" && now - (job.last_checked_at ?? 0) > 120_000)) {
-    ctx.waitUntil(saveOutput(env, job.id, ctx))
+    await enqueueSave(env, job.id, ctx)
     return
   }
   if ((job.status !== "queued" && job.status !== "in_progress") || !job.hf_status_url) return
@@ -269,7 +271,7 @@ export async function refreshJob(env: Env, job: JobRow, ctx: Ctx): Promise<void>
     await env.DB.prepare(`UPDATE jobs SET status = 'completed', output_source_url = ?2, output_mime = ?3 WHERE id = ?1`)
       .bind(job.id, out, mime)
       .run()
-    ctx.waitUntil(saveOutput(env, job.id, ctx))
+    await enqueueSave(env, job.id, ctx)
     return
   }
   if (st.status === "failed" || st.status === "nsfw" || st.status === "canceled") {
@@ -277,6 +279,42 @@ export async function refreshJob(env: Env, job: JobRow, ctx: Ctx): Promise<void>
     await env.DB.prepare(`UPDATE jobs SET status = ?2, error = ?3, completed_at = ?4 WHERE id = ?1`).bind(job.id, st.status, error, now).run()
     ctx.waitUntil(dispatch(env, ctx))
   }
+}
+
+/** Manda a cópia pro R2 pra Queue (fora da requisição); sem Queue (dev), usa waitUntil. */
+async function enqueueSave(env: Env, id: string, ctx: Ctx) {
+  if (env.SAVE_QUEUE) {
+    await env.SAVE_QUEUE.send({ id })
+    return
+  }
+  ctx.waitUntil(saveOutput(env, id, ctx))
+}
+
+/** URL do webhook com o token; vazia no dev (localhost não recebe webhook). */
+export function webhookUrl(env: Env) {
+  if (!env.PUBLIC_URL || !env.WEBHOOK_TOKEN) return undefined
+  return `${env.PUBLIC_URL.replace(/\/$/, "")}/api/webhooks/higgsfield?token=${encodeURIComponent(env.WEBHOOK_TOKEN)}`
+}
+
+/**
+ * Cron (a cada minuto): recupera o que ficou parado quando ninguém está com a tela aberta
+ * ou um webhook se perdeu. Consulta jobs vivos, reenvia 'submitting', refaz cópias travadas
+ * e ocupa vagas livres.
+ */
+export async function recoverAll(env: Env, ctx: Ctx) {
+  const stale = Date.now() - 20_000
+  const rows = await env.DB.prepare(
+    `SELECT * FROM jobs
+     WHERE (status IN ('queued','in_progress','submitting') AND COALESCE(last_checked_at, 0) < ?1)
+        OR status = 'completed'
+        OR (status = 'saving' AND COALESCE(last_checked_at, 0) < ?2)
+     ORDER BY created_at LIMIT 40`,
+  )
+    .bind(stale, Date.now() - 120_000)
+    .all<JobRow>()
+  for (const job of rows.results) await refreshJob(env, job, ctx, true)
+  await dispatch(env, ctx)
+  return rows.results.length
 }
 
 /** Copia o resultado pro R2 (os links da Higgsfield duram ~7 dias). */
@@ -304,6 +342,40 @@ export async function saveOutput(env: Env, id: string, ctx: Ctx) {
     await env.DB.prepare(`UPDATE jobs SET status = 'completed', error = ?2 WHERE id = ?1`).bind(id, `Falha ao salvar no R2: ${(e as Error).message}`).run()
   }
   await dispatch(env, ctx)
+}
+
+/**
+ * Refazer igual: mesmo endpoint e corpo, id novo (= Idempotency-Key nova → geração nova).
+ * Passa pelos mesmos limites e confirmação do envio normal.
+ */
+export async function redoJob(env: Env, src: JobRow, confirmed: boolean, ctx: Ctx): Promise<CreateResult> {
+  if (!src.endpoint || !src.request_body_json) return { ok: false, status: 400, error: "Job antigo sem o corpo original — refaça pelo Criar." }
+  const cost = src.estimated_cost_usd ?? 0
+  const cfg = await settings(env.DB)
+  const spent = await committedSpend(env.DB)
+  const fmt = (n: number) => `US$ ${n.toFixed(2).replace(".", ",")}`
+  if (spent.day + cost > cfg.dayLimit) {
+    const remaining = Math.max(0, cfg.dayLimit - spent.day)
+    return { ok: false, status: 403, error: `Passa do limite diário: restam ${fmt(remaining)} hoje.`, remaining }
+  }
+  if (spent.month + cost > cfg.monthLimit) {
+    return { ok: false, status: 403, error: `Passa do limite mensal: restam ${fmt(Math.max(0, cfg.monthLimit - spent.month))} no mês.` }
+  }
+  if (cost > cfg.confirmAbove && !confirmed) return { ok: false, status: 409, error: `Acima de ${fmt(cfg.confirmAbove)} — confirme o envio.`, needsConfirm: true }
+
+  const id = crypto.randomUUID()
+  await env.DB.prepare(
+    `INSERT INTO jobs (id, batch_id, parent_job_id, project_id, model_id, mode, prompt, params_json, refs_json, status,
+       estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at)
+     SELECT ?1, ?1, id, project_id, model_id, mode, prompt, params_json, refs_json, 'waiting_slot',
+       estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, ?2
+     FROM jobs WHERE id = ?3`,
+  )
+    .bind(id, Date.now(), src.id)
+    .run()
+  await dispatch(env, ctx)
+  const row = await env.DB.prepare(`SELECT * FROM jobs WHERE id = ?1`).bind(id).first<JobRow>()
+  return { ok: true, jobs: [toView(row!)] }
 }
 
 /** Cancela: na fila interna some na hora; na Higgsfield só enquanto 'queued'. */

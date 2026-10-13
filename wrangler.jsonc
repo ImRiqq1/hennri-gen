@@ -39,13 +39,20 @@
   "vars": {
     // Preenchidos ao configurar o Access (Zero Trust → Applications → gen.hennri.com).
     "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_AUD": "",
+    // URL pública pra montar o webhook. O token (WEBHOOK_TOKEN) é secret: wrangler secret put WEBHOOK_TOKEN
+    "PUBLIC_URL": "https://gen.hennri.com"
   },
+
+  // Fase 3: a Queue copia resultados pro R2 fora da requisição; o cron recupera jobs parados.
+  "queues": {
+    "producers": [{ "binding": "SAVE_QUEUE", "queue": "hennri-gen-save" }],
+    "consumers": [{ "queue": "hennri-gen-save", "max_batch_size": 4, "max_batch_timeout": 5, "max_retries": 10 }]
+  },
+  "triggers": { "crons": ["* * * * *"] },
 
   "routes": [
     // mesmo padrão do maker.hennri.com e party.hennri.com — custom domain.
     { "pattern": "gen.hennri.com", "custom_domain": true }
   ]
-
-  // Queue (cópia pro R2) e Cron (recuperação) entram nas fases 2 e 3.
 }

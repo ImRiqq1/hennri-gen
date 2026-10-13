@@ -6,3 +6,8 @@ HF_CREDENTIALS=
 
 # Só no desenvolvimento local: pula a checagem do Cloudflare Access em localhost.
 DEV_BYPASS_ACCESS=1
+
+# Fase 3: webhook. No dev deixe PUBLIC_URL vazio (localhost não recebe webhook; o polling e o cron cobrem).
+# Pra testar o webhook de verdade, suba um túnel (cloudflared) e ponha a URL https dele aqui.
+PUBLIC_URL=
+WEBHOOK_TOKEN=um-token-longo-qualquer
