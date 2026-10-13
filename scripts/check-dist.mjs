@@ -9,7 +9,8 @@ const needles = ["HF_CREDENTIALS", "api.higgsfield.ai", "Authorization: Key"]
 // Se houver credencial local, procura também os próprios valores (id e secret).
 for (const file of [".dev.vars", ".dev.vars.local"]) {
   if (!existsSync(file)) continue
-  const m = readFileSync(file, "utf8").match(/^HF_CREDENTIALS\s*=\s*"?([^"\r\n]+)"?/m)
+  // [ \t] e não \s: com o valor vazio, \s atravessaria a quebra de linha e pegaria a linha de baixo.
+  const m = readFileSync(file, "utf8").match(/^HF_CREDENTIALS[ \t]*=[ \t]*"?([^"\r\n]+)"?[ \t]*$/m)
   if (m) needles.push(...m[1].split(":").filter((s) => s.length >= 8))
 }
 
