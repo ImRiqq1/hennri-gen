@@ -15,7 +15,7 @@ export const stats = new Hono<AppEnv>().get("/", async (c) => {
   const monthStart = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) + offsetMs
 
   const db = c.env.DB
-  const [queue, spend, settings, totals] = await db.batch([
+  const [queue, spend, settings, totals, today] = await db.batch([
     db.prepare(
       `SELECT
          SUM(CASE WHEN status IN ${ACTIVE_STATUSES} THEN 1 ELSE 0 END) AS active,
@@ -35,6 +35,12 @@ export const stats = new Hono<AppEnv>().get("/", async (c) => {
        WHERE key IN ('limite_diario_usd','limite_mensal_usd','concorrencia_max','cotacao_brl')`,
     ),
     db.prepare(`SELECT COUNT(*) AS saved FROM jobs WHERE status = 'saved'`),
+    db
+      .prepare(
+        `SELECT id, model_id, mode, status, created_at, completed_at
+         FROM jobs WHERE created_at >= ?1 ORDER BY created_at LIMIT 200`,
+      )
+      .bind(dayStart),
   ])
 
   const q = (queue.results[0] ?? {}) as { active: number | null; waiting: number | null }
@@ -54,5 +60,16 @@ export const stats = new Hono<AppEnv>().get("/", async (c) => {
       brlRate: cfg.cotacao_brl ?? null,
     },
     gallery: { saved: t.saved },
+    today: {
+      dayStart,
+      jobs: today.results as {
+        id: string
+        model_id: string
+        mode: string
+        status: string
+        created_at: number
+        completed_at: number | null
+      }[],
+    },
   })
 })
