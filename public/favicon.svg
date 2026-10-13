@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" fill="#09090B"/>
-  <path d="M22 50 L38 14" stroke="#E8E0D5" stroke-width="5" stroke-linecap="square"/>
-  <path d="M46 22 h-6 v20 h6 v-8 h-3" fill="none" stroke="#E8E0D5" stroke-width="4" stroke-linecap="square"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320">
+  <rect width="320" height="320" rx="72" fill="#0A0A0B"/>
+  <g transform="translate(160 160) scale(1) translate(-160 -160)">
+    <path fill="#FFFFFF" stroke="#FFFFFF" stroke-width="7" stroke-linejoin="miter" fill-rule="evenodd" d="M30.00,82.00 L43.50,82.00 L43.50,43.50 L82.00,43.50 L82.00,30.00 L43.50,30.00 L30.00,30.00 L30.00,43.50 Z M276.50,43.50 L276.50,82.00 L290.00,82.00 L290.00,43.50 L290.00,30.00 L276.50,30.00 L238.00,30.00 L238.00,43.50 Z M235.00,200.20 L201.23,119.80 L185.47,119.80 L160.00,157.39 L134.53,119.80 L118.77,119.80 L85.00,200.20 L99.91,200.20 L127.65,134.16 L160.00,181.91 L192.35,134.16 L220.09,200.20 Z M30.00,290.00 L43.50,290.00 L82.00,290.00 L82.00,276.50 L43.50,276.50 L43.50,238.00 L30.00,238.00 L30.00,276.50 Z M276.50,276.50 L238.00,276.50 L238.00,290.00 L276.50,290.00 L290.00,290.00 L290.00,276.50 L290.00,238.00 L276.50,238.00 Z"/>
+  </g>
 </svg>

@@ -6,16 +6,8 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-/* Fixture fica só no logotipo (marca). Todo o resto é Geist. */
-@font-face {
-  font-family: "Fixture Condensed";
-  src: url("/fonts/Fixture-CondensedBlack.ttf") format("truetype");
-  font-weight: 900;
-  font-display: swap;
-}
-
 /*
-  HENNRI /GEN — painéis sólidos sobre grafite (ou névoa clara); vidro só no que flutua.
+  MISE.IA — painéis sólidos sobre grafite (ou névoa clara); vidro só no que flutua.
   Dois modos (data-theme) × quatro destaques (data-accent). Tudo deriva destes tokens.
   O destaque é usado com economia: ação principal, estado ativo, um card de destaque.
   Vermelho (--danger) fica reservado pra erro e estouro de limite.
@@ -143,7 +135,6 @@
 
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, monospace;
-  --font-brand: "Fixture Condensed", "Geist Variable", sans-serif;
 
   --animate-pulse-soft: pulse-soft 1.8s ease-in-out infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;

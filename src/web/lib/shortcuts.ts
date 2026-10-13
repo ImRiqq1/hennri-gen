@@ -1,4 +1,4 @@
-// Atalhos do HENNRI /GEN — fonte única para o teclado, a paleta (⌘K) e a ajuda (?).
+// Atalhos do MISE.IA — fonte única para o teclado, a paleta (⌘K) e a ajuda (?).
 
 export const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)
 export const MOD = IS_MAC ? "⌘" : "Ctrl"

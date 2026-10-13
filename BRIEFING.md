@@ -1,10 +1,12 @@
-# Briefing — HENNRI /GEN (site pessoal com Higgsfield API)
+# Briefing — MISE.IA (site pessoal com Higgsfield API)
 
 13 de out. de 2026 · @Henrique
 
+> **Marca:** o produto foi renomeado de HENNRI /GEN para **MISE.IA** em 13/10/2026. Logos oficiais em `public/brand/` (assinatura, símbolo e wordmark, branco e preto). O domínio continua gen.hennri.com e o repositório continua hennri-gen.
+
 ## Visão geral
 
-O HENNRI /GEN é um painel pessoal, de um único usuário (Henrique), para gerar vídeos e imagens pela Higgsfield API pagando por geração, sem depender da interface do higgsfield.ai. O foco é o fluxo de produção de ads e motion para iGaming: muitas variações rápidas, referência de imagem, controle de custo por job.
+O MISE.IA é um painel pessoal, de um único usuário (Henrique), para gerar vídeos e imagens pela Higgsfield API pagando por geração, sem depender da interface do higgsfield.ai. O foco é o fluxo de produção de ads e motion para iGaming: muitas variações rápidas, referência de imagem, controle de custo por job.
 
 ### O que o site faz
 
@@ -278,7 +280,7 @@ hennri-gen/
 
 ## Identidade visual da interface
 
-O site se chama HENNRI /GEN e mora em gen.hennri.com, seguindo o padrão de /OS, /LIVE e /MAKER: preto e branco, editorial, e quem tem cor é o vídeo, não a interface.
+O site se chama MISE.IA e mora em gen.hennri.com, seguindo o padrão de /OS, /LIVE e /MAKER: preto e branco, editorial, e quem tem cor é o vídeo, não a interface.
 
 - Paleta: fundo `#09090B`, texto cream `#E8E0D5`, branco e cinzas. Sem cor de acento; nada de verde.
 - Tipografia: família Fixture (Fixture, Condensed, Ultra), a mesma do /MAKER — os arquivos de fonte vêm do bundle do Claude Design desse projeto.

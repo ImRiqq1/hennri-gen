@@ -3,6 +3,7 @@ import { Home, Images, Keyboard, Layers, Search, Settings2, Sparkles, Wallet, ty
 import { useEffect, useState, type ReactNode } from "react"
 import { NavLink, useLocation } from "react-router-dom"
 import { Ambient } from "@/components/Ambient"
+import { LogoAssinatura, LogoSimbolo } from "@/brand/Logo"
 import { CommandCenter, useCommandCenter } from "@/components/CommandCenter"
 import { AccentPicker, ThemeToggle } from "@/components/ThemeControls"
 import { MOD } from "@/lib/shortcuts"
@@ -24,25 +25,6 @@ const PAGE_TITLES: Record<string, string> = { "/": "Início", "/criar": "Criar" 
 const spring = { type: "spring", stiffness: 420, damping: 36 } as const
 const ease = [0.16, 1, 0.3, 1] as const
 
-export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span className={cn("font-brand uppercase leading-none tracking-wide text-text", className)}>
-      Hennri<span className="px-[0.1em] text-accent">/</span>Gen
-    </span>
-  )
-}
-
-/** Isotipo: a barra do /GEN dentro de um círculo. */
-function Isotype({ className }: { className?: string }) {
-  return (
-    <span className={cn("grid size-11 shrink-0 place-items-center rounded-full bg-invert text-invert-ink", className)}>
-      <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
-        <path d="M8.5 19.5 15.5 4.5" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
-        <circle cx="17.2" cy="17.2" r="2.2" fill="var(--accent)" />
-      </svg>
-    </span>
-  )
-}
 
 function SideItem({ item, active }: { item: NavItem; active: boolean }) {
   const Icon = item.icon
@@ -87,9 +69,9 @@ function Sidebar() {
       transition={{ duration: 0.6, ease }}
       className="glass sticky top-4 hidden h-[calc(100dvh-2rem)] w-[76px] shrink-0 flex-col rounded-[32px] p-4 lg:flex xl:w-[244px]"
     >
-      <NavLink to="/" className="flex items-center gap-3" aria-label="HENNRI /GEN — início">
-        <Isotype />
-        <Wordmark className="hidden text-[22px] xl:block" />
+      <NavLink to="/" className="flex h-11 items-center px-1.5" aria-label="MISE.IA — início">
+        <LogoSimbolo className="size-8 xl:hidden" />
+        <LogoAssinatura className="hidden h-7 xl:block" />
       </NavLink>
 
       <p className="label mt-9 mb-3 hidden px-3 xl:block">Estúdio</p>
@@ -148,8 +130,8 @@ function TopBar() {
       transition={{ duration: 0.6, ease, delay: 0.05 }}
       className="flex items-center gap-3"
     >
-      <NavLink to="/" className="lg:hidden" aria-label="HENNRI /GEN — início">
-        <Isotype className="size-10" />
+      <NavLink to="/" className="lg:hidden" aria-label="MISE.IA — início">
+        <LogoSimbolo className="size-9" />
       </NavLink>
       <div className="hidden min-w-0 items-center gap-2 font-mono text-xs text-text-3 sm:flex">
         <span>Estúdio</span>
