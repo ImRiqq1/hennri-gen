@@ -1,7 +1,8 @@
 import { AnimatePresence, LayoutGroup, motion } from "motion/react"
-import { ChevronDown, Clapperboard, ImagePlus, Lock, Minus, Music2, Plus, Sparkles, Volume2, VolumeX, X } from "lucide-react"
+import { ChevronDown, Clapperboard, ImagePlus, Minus, Music2, Plus, Sparkles, Volume2, VolumeX, X } from "lucide-react"
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
 import { Eyebrow, GlassCard } from "@/components/Glass"
+import { useToast } from "@/components/Toaster"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
 import { EVENTS, isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
 import { cn } from "@/lib/utils"
@@ -153,7 +154,7 @@ export function Composer({ modeId }: { modeId: string }) {
   const [takes, setTakes] = useState(1)
   const [refs, setRefs] = useState<LocalRef[]>([])
   const [dragging, setDragging] = useState(false)
-  const [nudge, setNudge] = useState(false)
+  const toast = useToast()
   const promptRef = useRef<HTMLTextAreaElement>(null)
 
   // Troca de modo: se o modelo/resolução escolhidos não existem no modo novo, cai no padrão dele.
@@ -213,8 +214,7 @@ export function Composer({ modeId }: { modeId: string }) {
   })
 
   function tryGenerate() {
-    setNudge(true)
-    window.setTimeout(() => setNudge(false), 2600)
+    toast({ title: "A geração entra na fase 2", detail: "Nada foi enviado e nada foi cobrado." })
   }
 
   function onDrop(e: DragEvent) {
@@ -446,18 +446,6 @@ export function Composer({ modeId }: { modeId: string }) {
           <p className="mt-1.5 truncate text-xs text-text-3">{summary}</p>
         </div>
         <div className="relative flex items-center gap-2">
-          <AnimatePresence>
-            {nudge && (
-              <motion.span
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                className="glass absolute right-0 bottom-[calc(100%+10px)] flex items-center gap-2 rounded-full px-3 py-1.5 text-xs whitespace-nowrap text-text"
-              >
-                <Lock className="size-3.5" /> A geração entra na fase 2 — nada foi enviado.
-              </motion.span>
-            )}
-          </AnimatePresence>
           <motion.button
             type="button"
             onClick={tryGenerate}
@@ -472,9 +460,6 @@ export function Composer({ modeId }: { modeId: string }) {
             <kbd className="ml-2 rounded-full bg-black/15 px-3 py-2 font-mono text-xs font-medium">{MOD} ↵</kbd>
           </motion.button>
         </div>
-      </div>
-      <div className="sr-only" aria-live="polite">
-        {nudge ? "A geração entra na fase 2. Nada foi enviado." : ""}
       </div>
     </GlassCard>
   )

@@ -1,8 +1,10 @@
 import { motion } from "motion/react"
 import { ArrowUpRight, Clapperboard, Film, Gauge, ImageIcon, Layers3, Wand2, type LucideIcon } from "lucide-react"
 import { useEffect, useState, type ReactNode } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { useCommandCenter } from "@/components/CommandCenter"
+import { ModePreview } from "@/components/ModePreview"
 import { Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import { Roadmap } from "@/components/studio/Roadmap"
 import { SystemCard } from "@/components/studio/SideCards"
@@ -27,10 +29,18 @@ function Rise({ children, delay = 0, className }: { children: ReactNode; delay?:
   )
 }
 
-function Stat({ value, label, delay }: { value: string; label: string; delay: number }) {
+function Stat({ value, label, delay, money }: { value: number | null; label: string; delay: number; money?: boolean }) {
   return (
     <Rise delay={delay} className="min-w-0">
-      <p className="display-num text-metric-sm text-text sm:text-metric">{value}</p>
+      {value === null ? (
+        <span className="skeleton block h-9 w-14 rounded-xl sm:h-[38px]" />
+      ) : (
+        <AnimatedNumber
+          value={value}
+          format={money ? (n) => "$" + n.toFixed(2).replace(".", ",") : undefined}
+          className="display-num block text-metric-sm text-text sm:text-metric"
+        />
+      )}
       <p className="mt-1.5 text-[13px] text-text-3">{label}</p>
     </Rise>
   )
@@ -65,9 +75,9 @@ function Header({ stats }: { stats: PollState<Stats> }) {
         </Rise>
       </div>
       <div className="grid grid-cols-3 gap-6 sm:gap-10">
-        <Stat value={s ? String(s.today.jobs.length) : "–"} label="jobs hoje" delay={0.15} />
-        <Stat value={s ? String(s.queue.active + s.queue.waiting) : "–"} label="na fila" delay={0.2} />
-        <Stat value={s ? usd(s.spend.dayUsd).replace("US$", "$").replace(/\s/g, "") : "–"} label="gasto hoje" delay={0.25} />
+        <Stat value={s ? s.today.jobs.length : null} label="jobs hoje" delay={0.15} />
+        <Stat value={s ? s.queue.active + s.queue.waiting : null} label="na fila" delay={0.2} />
+        <Stat value={s ? s.spend.dayUsd : null} money label="gasto hoje" delay={0.25} />
       </div>
     </div>
   )
@@ -81,8 +91,9 @@ function HeroAction() {
     <motion.section
       initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7, ease, delay: 0.1 }}
-      className="relative h-full min-h-[220px]"
+      transition={{ duration: 0.6, ease, delay: 0.1 }}
+      whileHover={{ y: -3 }}
+      className="card-hover relative h-full min-h-[220px]"
     >
       <button
         type="button"
@@ -120,8 +131,8 @@ function HeroAction() {
         </span>
         <span className="pointer-events-none absolute inset-0 rounded-[28px] bg-[linear-gradient(120deg,transparent_35%,rgb(255_255_255/0.18)_50%,transparent_65%)] bg-[length:250%_100%] bg-[position:120%_0] transition-[background-position] duration-1000 ease-out group-hover:bg-[position:-20%_0]" />
       </button>
-      <NotchButton aria-label="Abrir Criar" onClick={() => navigate("/criar")}>
-        <ArrowUpRight className="size-5" strokeWidth={1.8} />
+      <NotchButton tabIndex={-1} aria-hidden className="pointer-events-none" onClick={() => navigate("/criar")}>
+        <ArrowUpRight className="size-[18px]" strokeWidth={1.8} />
       </NotchButton>
     </motion.section>
   )
@@ -135,25 +146,37 @@ const QUICK: { modeId: string; icon: LucideIcon; desc: string }[] = [
 ]
 
 function QuickAction({ modeId, icon: Icon, desc, delay }: { modeId: string; icon: LucideIcon; desc: string; delay: number }) {
-  const navigate = useNavigate()
   const idx = MODES.findIndex((m) => m.id === modeId)
   const mode = MODES[idx]
-  const go = () => navigate(`/criar?modo=${modeId}`)
+  const [hover, setHover] = useState(false)
   return (
     <GlassCard
       delay={delay}
-      className="group flex h-full cursor-pointer flex-col p-4"
-      onClick={go}
+      interactive
+      onHoverStart={() => setHover(true)}
+      onHoverEnd={() => setHover(false)}
+      className="group flex h-full flex-col p-4"
       corner={
-        <NotchButton aria-label={`Abrir ${mode.label}`} onClick={go}>
-          <ArrowUpRight className="size-5" strokeWidth={1.8} />
+        <NotchButton tabIndex={-1} aria-hidden className="pointer-events-none">
+          <ArrowUpRight className="size-[18px]" strokeWidth={1.8} />
         </NotchButton>
       }
     >
-      <span className="grid size-9 place-items-center rounded-full bg-surface-2 text-text transition-colors group-hover:bg-invert group-hover:text-invert-ink">
-        <Icon className="size-[18px]" strokeWidth={1.7} />
-      </span>
-      <p className="mt-4 text-card font-medium tracking-[-0.02em] text-text">{mode.label}</p>
+      {/* link esticado: o card inteiro é um alvo focável só */}
+      <Link
+        to={`/criar?modo=${modeId}`}
+        onFocus={() => setHover(true)}
+        onBlur={() => setHover(false)}
+        className="absolute inset-0 z-10 rounded-[24px]"
+        aria-label={`Novo job: ${mode.label}`}
+      />
+      <div className="flex items-start justify-between gap-3 pr-10">
+        <span className="grid size-9 place-items-center rounded-full bg-surface-2 text-text transition-colors duration-200 group-hover:bg-invert group-hover:text-invert-ink">
+          <Icon className="size-[17px]" strokeWidth={1.7} />
+        </span>
+        <ModePreview modeId={modeId} active={hover} />
+      </div>
+      <p className="mt-3 text-card font-medium tracking-[-0.02em] text-text">{mode.label}</p>
       <p className="mt-0.5 text-[13px] text-text-3">{desc}</p>
       <div className="mt-auto flex items-center justify-between pt-3">
         <span className="truncate font-mono text-[11px] text-text-3">{mode.models.map((m) => m.name).join(" · ")}</span>
@@ -181,7 +204,7 @@ function LimitInsight({ stats }: { stats: PollState<Stats> }) {
         <span className="rounded-full border border-line-2 px-3 py-1 text-xs text-text-2">Hoje</span>
       </div>
       <div className="mt-5 flex items-start gap-1.5">
-        <span className={cn("display-num text-metric-xl", pct >= 100 ? "text-danger" : "text-text")}>{Math.round(pct)}%</span>
+        <AnimatedNumber value={pct} format={(n) => `${Math.round(n)}%`} className={cn("display-num text-metric-xl", pct >= 100 ? "text-danger" : "text-text")} />
         <ArrowUpRight className="mt-1 size-4 text-accent" strokeWidth={2} />
       </div>
       <p className="mt-3 text-[16px] leading-snug tracking-[-0.015em] text-text">

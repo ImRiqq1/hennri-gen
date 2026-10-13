@@ -10,11 +10,14 @@ export function GlassCard({
   children,
   corner,
   delay = 0,
+  interactive,
   ...rest
 }: HTMLMotionProps<"section"> & {
   /** Botão que mora no recorte do canto. Fica fora da máscara (senão ela o cortaria). */
   corner?: ReactNode
   delay?: number
+  /** Card clicável: levanta no hover, borda clareia, luz na cor de destaque, ↗ gira. */
+  interactive?: boolean
   children?: ReactNode
 }) {
   function onMove(e: PointerEvent<HTMLElement>) {
@@ -28,7 +31,8 @@ export function GlassCard({
     // filter precisa terminar em "none": qualquer filter num ancestral isola o
     // backdrop-filter dos filhos e o vidro deixa de enxergar o fundo.
     animate: { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } },
-    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] as const, delay },
+    transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] as const, delay },
+    ...(interactive ? { whileHover: { y: -3, transition: spring } } : {}),
   }
   const leave = (e: PointerEvent<HTMLElement>) => e.currentTarget.style.setProperty("--spot", "0")
   if (!corner) {
@@ -37,7 +41,7 @@ export function GlassCard({
         {...motionProps}
         onPointerMove={onMove}
         onPointerLeave={leave}
-        className={cn("glass spotlight relative rounded-[24px]", className)}
+        className={cn("glass spotlight relative rounded-[24px]", interactive && "card-hover spotlight-accent", className)}
         {...rest}
       >
         {children}
@@ -45,8 +49,12 @@ export function GlassCard({
     )
   }
   return (
-    <motion.section {...motionProps} className="relative" {...rest}>
-      <div onPointerMove={onMove} onPointerLeave={leave} className={cn("glass spotlight notch relative h-full rounded-[24px]", className)}>
+    <motion.section {...motionProps} className={cn("relative", interactive && "card-hover")} {...rest}>
+      <div
+        onPointerMove={onMove}
+        onPointerLeave={leave}
+        className={cn("glass spotlight notch relative h-full rounded-[24px]", interactive && "spotlight-accent", className)}
+      >
         {children}
       </div>
       {corner}
@@ -58,12 +66,12 @@ export function GlassCard({
 export function NotchButton({ className, ...props }: ComponentProps<"button">) {
   return (
     <motion.button
-      whileHover={{ scale: 1.08, rotate: 45 }}
+      whileHover={{ scale: 1.06 }}
       whileTap={{ scale: 0.92 }}
       transition={spring}
       type="button"
       className={cn(
-        "glass-2 absolute top-0 right-0 grid size-[44px] place-items-center rounded-full text-text",
+        "notch-arrow glass-2 absolute top-0 right-0 grid size-[44px] place-items-center rounded-full text-text transition-colors hover:bg-invert hover:text-invert-ink",
         "disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}

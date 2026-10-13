@@ -1,5 +1,6 @@
 import { motion } from "motion/react"
 import { ArrowUpRight, RotateCw } from "lucide-react"
+import { AnimatedNumber } from "@/components/AnimatedNumber"
 import { Dot, Eyebrow, GlassCard, NotchButton } from "@/components/Glass"
 import { getHealth, usd, type Health, type Stats } from "@/lib/api"
 import { usePoll, type PollState } from "@/lib/usePoll"
@@ -7,18 +8,9 @@ import { cn } from "@/lib/utils"
 
 const ease = [0.16, 1, 0.3, 1] as const
 
-function BigNumber({ value, className }: { value: string | number; className?: string }) {
-  return (
-    <motion.span
-      key={String(value)}
-      initial={{ y: 14, opacity: 0, filter: "blur(4px)" }}
-      animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.5, ease }}
-      className={cn("display-num block text-text", className)}
-    >
-      {value}
-    </motion.span>
-  )
+function BigNumber({ value, money, className }: { value: number | null; money?: boolean; className?: string }) {
+  if (value === null) return <span className={cn("skeleton block h-10 w-28 rounded-xl", className)} />
+  return <AnimatedNumber value={value} format={money ? usd : undefined} className={cn("display-num block text-text", className)} />
 }
 
 /** Mostrador de concorrência: um arco por vaga; ocupadas acendem no destaque. */
@@ -66,7 +58,7 @@ export function QueueCard({ stats }: { stats: PollState<Stats> }) {
       </Eyebrow>
       <div className="mt-3 flex items-end justify-between gap-4">
         <div>
-          <BigNumber value={q ? q.active : "–"} className="text-metric-xl" />
+          <BigNumber value={q ? q.active : null} className="text-metric-xl" />
           <p className="mt-2 text-sm text-text-2">{q && q.active > 0 ? "gerando agora" : "nada gerando"}</p>
         </div>
         <div className="relative grid place-items-center">
@@ -94,7 +86,7 @@ export function SpendCard({ stats }: { stats: PollState<Stats> }) {
         <Eyebrow>Gasto hoje</Eyebrow>
         {s?.brlRate ? <span className="text-xs text-text-3 tabular">≈ R$ {(s.dayUsd * s.brlRate).toFixed(2).replace(".", ",")}</span> : null}
       </div>
-      <BigNumber value={s ? usd(s.dayUsd) : "–"} className={cn("mt-3 text-metric", over && "text-danger")} />
+      <BigNumber value={s ? s.dayUsd : null} money className={cn("mt-3 text-metric", over && "text-danger")} />
       <div className="mt-4">
         <div className="h-2 overflow-hidden rounded-full bg-surface-2">
           <motion.div
