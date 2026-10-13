@@ -1,11 +1,14 @@
 import { AnimatePresence, LayoutGroup, motion } from "motion/react"
 import { ChevronDown, Clapperboard, Images, Minus, Plus, Sparkles, Volume2, VolumeX } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Eyebrow, GlassCard } from "@/components/Glass"
+import { GlassCard } from "@/components/Glass"
 import { MediaInputs, pasteTargetFor, slotsFor } from "@/components/studio/MediaInputs"
 import { useToast } from "@/components/Toaster"
 import { lastActiveZone } from "@/components/upload/Media"
-import { addFiles, kindOf } from "@/lib/media"
+import { ConfirmCost, EstimatePanel, guardFor, useEstimate } from "@/components/studio/Estimate"
+import type { Stats } from "@/lib/api"
+import { addFiles, kindOf, useMediaState } from "@/lib/media"
+import type { EstimateInput } from "@shared/pricing"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
 import { EVENTS, isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
 import { cn } from "@/lib/utils"
@@ -181,7 +184,7 @@ function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) =
   )
 }
 
-export function Composer({ modeId }: { modeId: string }) {
+export function Composer({ modeId, spend }: { modeId: string; spend: Stats["spend"] | null }) {
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0]
   const [modelChoice, setModel] = useState(mode.models[0].name)
   const [prompt, setPrompt] = useState("")
@@ -264,7 +267,40 @@ export function Composer({ modeId }: { modeId: string }) {
     }
   })
 
+  // Durações que entram no preço: vídeo de origem (Genjutsu/Editar/Estender) e vídeos de referência.
+  const mediaState = useMediaState()
+  const okItems = (key: string) => (mediaState[key] ?? []).filter((it) => it.status !== "error")
+  const sourceVideoSec = ["genjutsu", "edit", "extend"].includes(mode.id) ? okItems(`${mode.id}:video`)[0]?.meta.duration : undefined
+  const refVideoSec =
+    mode.id === "ref" || mode.id === "cinema"
+      ? okItems(`${mode.id}:vid`).reduce((a, it) => a + (it.meta.duration ?? 0), 0)
+      : undefined
+
+  const estimateInput: EstimateInput = {
+    modeId: mode.id,
+    model,
+    resolution,
+    duration: mode.duration ? duration : 5,
+    aspect,
+    audio: mode.audio && audio,
+    takes,
+    ...(sourceVideoSec ? { sourceVideoSec: Math.round(sourceVideoSec * 10) / 10 } : {}),
+    ...(refVideoSec ? { refVideoSec: Math.round(refVideoSec * 10) / 10 } : {}),
+    ...(isGenjutsu && model === "Restyle" && preset ? { presetId: preset.id } : {}),
+  }
+  const est = useEstimate(estimateInput)
+  const guard = guardFor(est.result?.total ?? null, spend)
+  const [confirming, setConfirming] = useState(false)
+
   function tryGenerate() {
+    if (guard.overDay || guard.needsConfirm) {
+      setConfirming(true)
+      return
+    }
+    fakeSubmit()
+  }
+  function fakeSubmit() {
+    setConfirming(false)
     toast({ title: "A geração entra na fase 2", detail: "Nada foi enviado e nada foi cobrado." })
   }
 
@@ -451,18 +487,17 @@ export function Composer({ modeId }: { modeId: string }) {
         )}
       </AnimatePresence>
 
-      {/* Rodapé: custo + gerar */}
+      {/* Rodapé: custo ao vivo + gerar */}
       <div className="flex flex-col gap-3 border-t border-line pt-4 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <Eyebrow>Estimativa</Eyebrow>
-          <p className="mt-1 flex items-baseline gap-2">
-            <span className="display-num text-metric-sm text-text">—</span>
-            <span className="truncate text-sm text-text-3">
-              {takes > 1 ? `× ${takes} takes · ` : ""}custo ao vivo na fase 2
-            </span>
-          </p>
-          <p className="mt-1.5 truncate text-xs text-text-3">{summary}</p>
-        </div>
+        <EstimatePanel
+          input={estimateInput}
+          result={est.result}
+          loading={est.loading}
+          failed={est.failed}
+          guard={guard}
+          brlRate={spend?.brlRate ?? null}
+          summary={summary}
+        />
         <div className="relative flex items-center gap-2">
           <motion.button
             type="button"
@@ -470,7 +505,12 @@ export function Composer({ modeId }: { modeId: string }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             transition={spring}
-            className="group relative flex h-12 flex-1 items-center justify-center gap-2.5 overflow-hidden rounded-full bg-accent pr-1.5 pl-5 text-[15px] font-semibold text-accent-ink shadow-[0_18px_40px_-14px_rgb(var(--accent-glow)/0.7)] sm:flex-none"
+            className={cn(
+              "group relative flex h-12 flex-1 items-center justify-center gap-2.5 overflow-hidden rounded-full pr-1.5 pl-5 text-[15px] font-semibold sm:flex-none",
+              guard.overDay || guard.needsConfirm
+                ? "bg-danger text-white"
+                : "bg-accent text-accent-ink shadow-[0_18px_40px_-14px_rgb(var(--accent-glow)/0.7)]",
+            )}
           >
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(110deg,transparent_30%,rgb(255_255_255/0.35)_50%,transparent_70%)] transition-transform duration-700 ease-out group-hover:translate-x-full" />
             <Sparkles className="size-5" strokeWidth={2} />
@@ -479,6 +519,7 @@ export function Composer({ modeId }: { modeId: string }) {
           </motion.button>
         </div>
       </div>
+      <ConfirmCost open={confirming} total={est.result?.total ?? null} guard={guard} onCancel={() => setConfirming(false)} onConfirm={fakeSubmit} />
     </GlassCard>
   )
 }

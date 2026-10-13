@@ -15,6 +15,7 @@ export type Stats = {
     dayLimitUsd: number | null
     monthLimitUsd: number | null
     brlRate: number | null
+    confirmAboveUsd: number | null
   }
   gallery: { saved: number }
   today: {

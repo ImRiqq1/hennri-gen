@@ -32,7 +32,7 @@ export const stats = new Hono<AppEnv>().get("/", async (c) => {
       .bind(dayStart, monthStart),
     db.prepare(
       `SELECT key, value FROM settings
-       WHERE key IN ('limite_diario_usd','limite_mensal_usd','concorrencia_max','cotacao_brl')`,
+       WHERE key IN ('limite_diario_usd','limite_mensal_usd','concorrencia_max','cotacao_brl','confirmacao_acima_usd')`,
     ),
     db.prepare(`SELECT COUNT(*) AS saved FROM jobs WHERE status = 'saved'`),
     db
@@ -58,6 +58,7 @@ export const stats = new Hono<AppEnv>().get("/", async (c) => {
       dayLimitUsd: cfg.limite_diario_usd ?? null,
       monthLimitUsd: cfg.limite_mensal_usd ?? null,
       brlRate: cfg.cotacao_brl ?? null,
+      confirmAboveUsd: cfg.confirmacao_acima_usd ?? null,
     },
     gallery: { saved: t.saved },
     today: {
