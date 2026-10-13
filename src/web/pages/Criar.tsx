@@ -1,37 +1,58 @@
 import { motion } from "motion/react"
-import { useState } from "react"
+import { useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
+import { Eyebrow } from "@/components/Glass"
 import { Composer, ModeTabs } from "@/components/studio/Composer"
 import { GalleryPeek } from "@/components/studio/GalleryPeek"
-import { Roadmap } from "@/components/studio/Roadmap"
 import { QueueCard, SpendCard, SystemCard } from "@/components/studio/SideCards"
 import { getStats } from "@/lib/api"
+import { MODES } from "@/lib/modes"
+import { isTyping, overlayOpen } from "@/lib/shortcuts"
 import { usePoll } from "@/lib/usePoll"
 
 const ease = [0.16, 1, 0.3, 1] as const
 
 export function Criar() {
-  const [modeId, setModeId] = useState("t2v")
+  // O modo mora na URL (/criar?modo=genjutsu): a paleta, a Home e o histórico apontam pra ele.
+  const [params, setParams] = useSearchParams()
+  const modeId = MODES.some((m) => m.id === params.get("modo")) ? params.get("modo")! : MODES[0].id
+  const setModeId = (id: string) => setParams(id === MODES[0].id ? {} : { modo: id }, { replace: true })
   const [stats] = usePoll(getStats, 15_000)
+
+  // 1–8 trocam de modo.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || overlayOpen()) return
+      const n = Number(e.key)
+      if (Number.isInteger(n) && n >= 1 && n <= MODES.length) {
+        setParams(n === 1 ? {} : { modo: MODES[n - 1].id }, { replace: true })
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [setParams])
+
+  const mode = MODES.find((m) => m.id === modeId)!
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-        <div className="overflow-hidden">
-          <motion.h1
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.8, ease }}
-            className="font-condensed text-[clamp(44px,8vw,88px)] uppercase leading-[0.86] text-text"
-          >
-            Criar<span className="text-accent">.</span>
-          </motion.h1>
+      <div className="flex flex-col gap-5">
+        <div className="min-w-0">
+          <Eyebrow>Novo job</Eyebrow>
+          <div className="mt-3 overflow-hidden pb-1">
+            <motion.h1
+              key={modeId}
+              initial={{ y: "105%" }}
+              animate={{ y: 0 }}
+              transition={{ duration: 0.7, ease }}
+              className="display-title text-[clamp(40px,5vw,68px)] whitespace-nowrap text-text"
+            >
+              {mode.label}
+              <span className="text-accent">.</span>
+            </motion.h1>
+          </div>
         </div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease, delay: 0.1 }}
-          className="min-w-0"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease, delay: 0.1 }} className="min-w-0">
           <ModeTabs value={modeId} onChange={setModeId} />
         </motion.div>
       </div>
@@ -55,7 +76,6 @@ export function Criar() {
       <div className="lg:hidden">
         <GalleryPeek stats={stats} />
       </div>
-      <Roadmap />
     </div>
   )
 }

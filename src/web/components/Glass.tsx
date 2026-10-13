@@ -95,7 +95,7 @@ export function IconButton({
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cn("flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.18em] text-text-3", className)}>
+    <p className={cn("label flex items-center gap-2", className)}>
       {children}
     </p>
   )

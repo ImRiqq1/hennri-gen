@@ -1,106 +1,83 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-@font-face {
-  font-family: "Fixture";
-  src: url("/fonts/Fixture-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Fixture";
-  src: url("/fonts/Fixture-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Fixture";
-  src: url("/fonts/Fixture-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Fixture";
-  src: url("/fonts/Fixture-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-display: swap;
-}
+/* Fixture fica só no logotipo (marca). Todo o resto é Geist. */
 @font-face {
   font-family: "Fixture Condensed";
   src: url("/fonts/Fixture-CondensedBlack.ttf") format("truetype");
   font-weight: 900;
   font-display: swap;
 }
-@font-face {
-  font-family: "Fixture Ultra";
-  src: url("/fonts/FixtureUltra-Black.ttf") format("truetype");
-  font-weight: 900;
-  font-display: swap;
-}
 
 /*
-  HENNRI /GEN — "vidro sobre grafite".
+  HENNRI /GEN — painéis sólidos sobre grafite (ou névoa clara); vidro só no que flutua.
   Dois modos (data-theme) × quatro destaques (data-accent). Tudo deriva destes tokens.
-  O destaque é usado com economia: ação principal, estado ativo, brilho ambiente.
+  O destaque é usado com economia: ação principal, estado ativo, um card de destaque.
   Vermelho (--danger) fica reservado pra erro e estouro de limite.
 */
 :root,
 [data-theme="dark"] {
-  --bg: #060607;
-  --bg-2: #0c0c0e;
-  --surface: rgb(255 255 255 / 0.042);
-  --surface-2: rgb(255 255 255 / 0.075);
-  --surface-solid: #121214;
-  --line: rgb(255 255 255 / 0.075);
-  --line-2: rgb(255 255 255 / 0.14);
-  --text: #f4f1ec;
-  --text-2: rgb(236 230 222 / 0.62);
-  --text-3: rgb(236 230 222 / 0.36);
-  --invert: #f4f1ec;
-  --invert-ink: #0b0b0c;
-  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.07), inset 0 0 0 1px rgb(255 255 255 / 0.02);
-  --shadow: 0 40px 80px -32px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.25);
-  --shadow-sm: 0 10px 30px -12px rgb(0 0 0 / 0.6);
-  --orb-opacity: 0.7;
-  --grain-opacity: 0.06;
+  --bg: #050506;
+  --bg-2: #0b0b0d;
+  --panel: #0f0f11;
+  --surface: rgb(255 255 255 / 0.035);
+  --surface-2: rgb(255 255 255 / 0.07);
+  --surface-solid: #18181b;
+  --line: rgb(255 255 255 / 0.065);
+  --line-2: rgb(255 255 255 / 0.12);
+  --text: #f5f5f4;
+  --text-2: rgb(245 245 244 / 0.6);
+  --text-3: rgb(245 245 244 / 0.34);
+  --invert: #f5f5f4;
+  --invert-ink: #0a0a0b;
+  --float-bg: rgb(22 22 25 / 0.74);
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.045);
+  --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.85), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 8px 24px -10px rgb(0 0 0 / 0.7);
+  --grid-line: rgb(255 255 255 / 0.03);
+  --grain-opacity: 0.045;
   --danger: #ff4d55;
 }
 
 [data-theme="light"] {
-  --bg: #e6e7ea;
-  --bg-2: #f1f1f3;
-  --surface: rgb(255 255 255 / 0.56);
-  --surface-2: rgb(255 255 255 / 0.82);
+  --bg: #e7e7e9;
+  --bg-2: #efeff1;
+  --panel: #f7f7f8;
+  --surface: rgb(12 12 16 / 0.04);
+  --surface-2: #ffffff;
   --surface-solid: #ffffff;
   --line: rgb(12 12 16 / 0.07);
-  --line-2: rgb(12 12 16 / 0.13);
-  --text: #0b0b0c;
-  --text-2: rgb(11 11 12 / 0.6);
-  --text-3: rgb(11 11 12 / 0.38);
-  --invert: #0b0b0c;
-  --invert-ink: #f4f1ec;
-  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.4);
-  --shadow: 0 40px 70px -36px rgb(30 32 40 / 0.28), 0 2px 6px rgb(30 32 40 / 0.06);
-  --shadow-sm: 0 10px 24px -14px rgb(30 32 40 / 0.3);
-  --orb-opacity: 0.55;
-  --grain-opacity: 0.035;
+  --line-2: rgb(12 12 16 / 0.12);
+  --text: #0a0a0b;
+  --text-2: rgb(10 10 11 / 0.58);
+  --text-3: rgb(10 10 11 / 0.36);
+  --invert: #0a0a0b;
+  --invert-ink: #f5f5f4;
+  --float-bg: rgb(250 250 251 / 0.8);
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --shadow: 0 30px 60px -34px rgb(30 32 40 / 0.24), 0 1px 2px rgb(30 32 40 / 0.05);
+  --shadow-sm: 0 8px 20px -12px rgb(30 32 40 / 0.25);
+  --grid-line: rgb(10 10 11 / 0.04);
+  --grain-opacity: 0.02;
   --danger: #e5303a;
 }
 
 [data-accent="laranja"] { --accent: #ff5b1f; --accent-ink: #fff7f2; --accent-glow: 255 91 31; }
 [data-accent="lima"]    { --accent: #d6f54a; --accent-ink: #0b0b0c; --accent-glow: 214 245 74; }
 [data-accent="azul"]    { --accent: #2f6bff; --accent-ink: #f5f8ff; --accent-glow: 47 107 255; }
-[data-accent="mono"]    { --accent: var(--invert); --accent-ink: var(--invert-ink); --accent-glow: 180 176 170; }
+[data-accent="mono"]    { --accent: var(--invert); --accent-ink: var(--invert-ink); --accent-glow: 160 160 160; }
 [data-theme="light"][data-accent="lima"] { --accent: #c4e62e; }
 
 :root {
   /* shadcn */
   --background: var(--bg);
   --foreground: var(--text);
-  --card: var(--surface-solid);
+  --card: var(--panel);
   --card-foreground: var(--text);
   --popover: var(--surface-solid);
   --popover-foreground: var(--text);
@@ -132,6 +109,7 @@
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-2: var(--bg-2);
+  --color-panel: var(--panel);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-solid: var(--surface-solid);
@@ -163,16 +141,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: "Fixture", ui-sans-serif, system-ui, sans-serif;
-  --font-condensed: "Fixture Condensed", "Fixture", sans-serif;
-  --font-ultra: "Fixture Ultra", "Fixture", sans-serif;
-
-  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+  --font-brand: "Fixture Condensed", "Geist Variable", sans-serif;
 
   --animate-pulse-soft: pulse-soft 1.8s ease-in-out infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;
-  --animate-drift-a: drift-a 26s ease-in-out infinite alternate;
-  --animate-drift-b: drift-b 32s ease-in-out infinite alternate;
 
   @keyframes pulse-soft {
     0%, 100% { opacity: 1; transform: scale(1); }
@@ -181,14 +155,6 @@
   @keyframes shimmer {
     from { background-position: 200% 0; }
     to { background-position: -200% 0; }
-  }
-  @keyframes drift-a {
-    from { transform: translate3d(-8%, -6%, 0) scale(1); }
-    to { transform: translate3d(10%, 8%, 0) scale(1.15); }
-  }
-  @keyframes drift-b {
-    from { transform: translate3d(6%, 10%, 0) scale(1.1); }
-    to { transform: translate3d(-12%, -4%, 0) scale(0.95); }
   }
 }
 
@@ -207,6 +173,8 @@
     @apply font-sans text-text antialiased;
     min-height: 100dvh;
     overflow-x: hidden;
+    letter-spacing: -0.006em;
+    font-feature-settings: "ss01";
   }
   ::selection {
     background: var(--accent);
@@ -226,20 +194,25 @@
 }
 
 @layer components {
-  /* Vidro: o bloco básico de toda superfície. */
+  /* Painel: o bloco básico (sólido, borda fina, sombra longa e suave). */
   .glass {
-    background: var(--surface);
+    background: var(--panel);
     border: 1px solid var(--line);
     box-shadow: var(--highlight), var(--shadow);
-    backdrop-filter: blur(28px) saturate(170%);
-    -webkit-backdrop-filter: blur(28px) saturate(170%);
   }
+  /* Peça elevada dentro de um painel: chips, botões redondos. */
   .glass-2 {
     background: var(--surface-2);
     border: 1px solid var(--line);
     box-shadow: var(--highlight);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+  /* Vidro de verdade: só no que flutua por cima do conteúdo (dock, popover, paleta). */
+  .float {
+    background: var(--float-bg);
+    border: 1px solid var(--line-2);
+    box-shadow: var(--highlight), var(--shadow);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
   }
 
   /* Recorte circular no canto superior direito (o "notch" das referências),
@@ -259,7 +232,7 @@
     );
   }
 
-  /* Luz que segue o cursor dentro do card (--mx/--my vindos do Spotlight). */
+  /* Luz discreta que segue o cursor dentro do card (--mx/--my vindos do GlassCard). */
   .spotlight::before {
     content: "";
     position: absolute;
@@ -268,11 +241,7 @@
     pointer-events: none;
     opacity: var(--spot, 0);
     transition: opacity var(--dur-md) var(--ease-out);
-    background: radial-gradient(
-      420px circle at var(--mx, 50%) var(--my, 50%),
-      rgb(var(--accent-glow) / 0.13),
-      transparent 60%
-    );
+    background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 50%), var(--surface), transparent 70%);
   }
 
   .skeleton {
@@ -290,5 +259,43 @@
 
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Número de destaque: leve, grande, apertado (estilo "89%"). */
+  .display-num {
+    font-weight: 300;
+    letter-spacing: -0.055em;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+  .display-title {
+    font-weight: 500;
+    letter-spacing: -0.045em;
+    line-height: 0.95;
+  }
+
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+
+  .kbd {
+    display: inline-flex;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.15rem;
+    border-radius: 0.4rem;
+    border: 1px solid var(--line-2);
+    background: var(--surface);
+    padding: 0 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--text-2);
   }
 }

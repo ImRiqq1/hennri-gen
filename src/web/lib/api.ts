@@ -17,6 +17,11 @@ export type Stats = {
     brlRate: number | null
   }
   gallery: { saved: number }
+  today: {
+    /** início do dia (fuso de São Paulo) em epoch ms */
+    dayStart: number
+    jobs: { id: string; model_id: string; mode: string; status: string; created_at: number; completed_at: number | null }[]
+  }
 }
 
 async function getJson<T>(path: string, isValid: (b: unknown) => boolean): Promise<T> {

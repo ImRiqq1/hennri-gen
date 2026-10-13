@@ -14,6 +14,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       type="button"
       role="switch"
+      data-theme-toggle
       aria-checked={!dark}
       aria-label={dark ? "Mudar para o modo claro" : "Mudar para o modo escuro"}
       onClick={(e) => {
@@ -91,7 +92,7 @@ export function AccentPicker({ align = "right" }: { align?: "right" | "up" }) {
             exit={{ opacity: 0, scale: 0.95, y: align === "up" ? 4 : -4, transition: { duration: 0.14 } }}
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "glass absolute z-50 flex items-center gap-1.5 rounded-full p-1.5",
+              "float absolute z-50 flex items-center gap-1.5 rounded-full p-1.5",
               align === "up" ? "bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2" : "top-[calc(100%+10px)] right-0",
             )}
           >

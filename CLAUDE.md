@@ -52,5 +52,8 @@ Sempre responder e escrever em português do Brasil.
 - `.glass` / `.glass-2` = vidro (backdrop-filter). **Nunca deixar `filter`, `opacity < 1` ou `mask` num ancestral de um vidro depois da animação** — isola o backdrop-filter. Por isso o `GlassCard` termina a entrada com `filter: none` e o recorte (`corner`) fica num filho.
 - O `body` não tem fundo (fica no `<html>`), senão cobre o `<Ambient>` de z-index negativo.
 - Tema salvo em `localStorage` (`hennri-gen:tema`), aplicado por script inline no `index.html` antes do paint. Troca de tema com revelação circular (View Transitions).
-- Fontes Fixture (display: Fixture Condensed; Fixture Ultra fica ilegível em número pequeno). Vermelho (`--danger`) só pra erro e estouro de limite.
+- **Fontes (13/10/2026):** Geist (`@fontsource-variable/geist`) em tudo; números grandes com `.display-num` (peso 300, apertado), títulos com `.display-title`, rótulos/atalhos em Geist Mono (`.label`, `.kbd`). Fixture Condensed só no logotipo (`font-brand`). Vermelho (`--danger`) só pra erro e estouro de limite.
+- **Sem manchas de luz desfocadas no fundo** (o Henrique achou feio): fundo = grade fina + grão. Painéis são sólidos (`.glass`/`.glass-2`); vidro com blur só no que flutua (`.float`: dock, popovers, paleta).
+- **Atalhos:** lista única em `src/web/lib/shortcuts.ts` (alimenta paleta ⌘K e ajuda ?). Globais no `CommandCenter`; os da tela Criar no `Composer`/`Criar`. Atalho de uma tecla ignora campos de texto (`isTyping`) e overlays abertos (`overlayOpen()`, via `data-overlay` no `<html>` — não procurar `[role=dialog]`, o que está saindo continua no DOM).
+- Rotas: `/` Início, `/criar?modo=<id>` (modo na URL).
 - Motion: biblioteca `motion` (`motion/react`), easing `[0.16, 1, 0.3, 1]`, `MotionConfig reducedMotion="user"`.

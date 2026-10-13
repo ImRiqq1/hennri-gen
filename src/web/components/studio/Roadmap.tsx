@@ -71,7 +71,7 @@ export function Roadmap() {
             >
               <span
                 className={cn(
-                  "relative grid size-11 shrink-0 place-items-center rounded-full border font-condensed text-lg",
+                  "relative grid size-11 shrink-0 place-items-center rounded-full border font-mono text-sm",
                   f.done && "border-transparent bg-accent text-accent-ink shadow-[0_10px_30px_-8px_rgb(var(--accent-glow)/0.8)]",
                   f.n === current && "glass-2 border-line-2 text-text",
                   !f.done && f.n !== current && "border-line bg-bg-2 text-text-3",

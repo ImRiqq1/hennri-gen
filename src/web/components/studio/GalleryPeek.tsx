@@ -31,7 +31,7 @@ export function GalleryPeek({ stats }: { stats: PollState<Stats> }) {
       <div className="flex flex-wrap items-end gap-x-6 gap-y-2 pr-14">
         <div>
           <Eyebrow>Galeria</Eyebrow>
-          <p className="mt-2 font-condensed text-3xl uppercase leading-none text-text">
+          <p className="display-title mt-2 text-3xl text-text">
             {saved ? `${saved} salvos` : "Ainda vazia"}
           </p>
         </div>

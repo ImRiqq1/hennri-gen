@@ -3,6 +3,7 @@ import { ChevronDown, Clapperboard, ImagePlus, Lock, Minus, Music2, Plus, Sparkl
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
 import { Eyebrow, GlassCard } from "@/components/Glass"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
+import { EVENTS, isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
 import { cn } from "@/lib/utils"
 
 const spring = { type: "spring", stiffness: 460, damping: 36 } as const
@@ -14,12 +15,13 @@ export function ModeTabs({ value, onChange }: { value: string; onChange: (id: st
   return (
     <LayoutGroup id="modes">
       <div className="glass-2 no-scrollbar -mx-1 flex max-w-full gap-1 overflow-x-auto rounded-full p-1">
-        {MODES.map((m) => {
+        {MODES.map((m, i) => {
           const active = m.id === value
           return (
             <button
               key={m.id}
               type="button"
+              ref={active ? (el) => el?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }) : undefined}
               onClick={() => onChange(m.id)}
               className={cn(
                 "relative shrink-0 rounded-full px-4 py-2.5 text-sm transition-colors duration-200",
@@ -29,7 +31,10 @@ export function ModeTabs({ value, onChange }: { value: string; onChange: (id: st
               {active && (
                 <motion.span layoutId="mode-pill" transition={spring} className="absolute inset-0 rounded-full bg-invert shadow-[var(--shadow-sm)]" />
               )}
-              <span className="relative whitespace-nowrap">{m.label}</span>
+              <span className="relative flex items-center gap-2 whitespace-nowrap">
+                {m.label}
+                <span className={cn("hidden font-mono text-[10px] lg:inline", active ? "text-invert-ink/50" : "text-text-3")}>{i + 1}</span>
+              </span>
             </button>
           )
         })}
@@ -149,6 +154,7 @@ export function Composer({ modeId }: { modeId: string }) {
   const [refs, setRefs] = useState<LocalRef[]>([])
   const [dragging, setDragging] = useState(false)
   const [nudge, setNudge] = useState(false)
+  const promptRef = useRef<HTMLTextAreaElement>(null)
 
   // Troca de modo: se o modelo/resolução escolhidos não existem no modo novo, cai no padrão dele.
   const model = mode.models.some((m) => m.name === modelChoice) ? modelChoice : mode.models[0].name
@@ -167,7 +173,7 @@ export function Composer({ modeId }: { modeId: string }) {
     )
   }
 
-  // Ctrl+V de imagem e Ctrl/Cmd+Enter (que por enquanto só mostra o aviso da fase 2).
+  // Ctrl+V de imagem e atalhos da tela Criar (ver src/web/lib/shortcuts.ts).
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
       if (!imageLimit) return
@@ -175,13 +181,33 @@ export function Composer({ modeId }: { modeId: string }) {
       if (files.length) addFiles(files)
     }
     const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") tryGenerate()
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !overlayOpen()) {
+        e.preventDefault()
+        tryGenerate()
+        return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || overlayOpen()) return
+      if (e.key === "/") {
+        e.preventDefault()
+        promptRef.current?.focus()
+      } else if (e.key === "[" && mode.duration) {
+        setDuration((d) => Math.max(4, d - 1))
+      } else if (e.key === "]" && mode.duration) {
+        setDuration((d) => Math.min(30, d + 1))
+      } else if (e.key === "-" || e.key === "_") {
+        setTakes((t) => Math.max(1, t - 1))
+      } else if (e.key === "+" || e.key === "=") {
+        setTakes((t) => Math.min(4, t + 1))
+      }
     }
+    const onFocus = () => promptRef.current?.focus()
     window.addEventListener("paste", onPaste)
     window.addEventListener("keydown", onKey)
+    window.addEventListener(EVENTS.focusPrompt, onFocus)
     return () => {
       window.removeEventListener("paste", onPaste)
       window.removeEventListener("keydown", onKey)
+      window.removeEventListener(EVENTS.focusPrompt, onFocus)
     }
   })
 
@@ -230,6 +256,7 @@ export function Composer({ modeId }: { modeId: string }) {
       {/* Prompt */}
       <div className="group relative flex flex-1 flex-col rounded-[24px] border border-line bg-surface transition-colors focus-within:border-line-2 focus-within:bg-surface-2">
         <textarea
+          ref={promptRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           placeholder={mode.placeholder}
@@ -238,7 +265,9 @@ export function Composer({ modeId }: { modeId: string }) {
         />
         <div className="pointer-events-none absolute right-5 bottom-4 left-5 flex items-center justify-between text-xs text-text-3">
           <span className="tabular">{prompt.length.toLocaleString("pt-BR")} caracteres</span>
-          <span className="hidden sm:inline">↑ ↓ histórico de prompts</span>
+          <span className="hidden items-center gap-1.5 sm:flex">
+            <span className="kbd">/</span> focar · <span className="kbd">Esc</span> sair
+          </span>
         </div>
       </div>
 
@@ -316,11 +345,11 @@ export function Composer({ modeId }: { modeId: string }) {
       </AnimatePresence>
 
       {/* Parâmetros */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1.2fr_1fr_1.4fr_auto]">
+      <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-[1.2fr_1fr_1.4fr_auto]">
         {mode.duration ? (
-          <Field label="Duração" hint="4–30 s">
+          <Field label="Duração" hint="[ ]  4–30 s">
             <div className="flex items-center gap-4">
-              <span className="w-[58px] font-condensed text-4xl leading-none text-text tabular">
+              <span className="display-num w-[62px] text-[40px] text-text">
                 {duration}
                 <span className="text-lg text-text-3">s</span>
               </span>
@@ -347,7 +376,7 @@ export function Composer({ modeId }: { modeId: string }) {
         </Field>
 
         {mode.aspect ? (
-          <Field label="Proporção" className="sm:col-span-2 xl:col-span-1">
+          <Field label="Proporção" className="sm:col-span-2 2xl:col-span-1">
             <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-surface p-1">
               {ASPECTS.map((a) => (
                 <button
@@ -366,7 +395,7 @@ export function Composer({ modeId }: { modeId: string }) {
             </div>
           </Field>
         ) : (
-          <Field label="Proporção" className="sm:col-span-2 xl:col-span-1">
+          <Field label="Proporção" className="sm:col-span-2 2xl:col-span-1">
             <p className="py-2 text-sm text-text-2">Segue a mídia de origem</p>
           </Field>
         )}
@@ -408,7 +437,7 @@ export function Composer({ modeId }: { modeId: string }) {
         <div className="min-w-0 flex-1">
           <Eyebrow>Estimativa</Eyebrow>
           <p className="mt-1 flex items-baseline gap-2">
-            <span className="font-condensed text-3xl leading-none text-text">—</span>
+            <span className="display-num text-[34px] text-text">—</span>
             <span className="truncate text-sm text-text-3">
               {takes > 1 ? `× ${takes} takes · ` : ""}custo ao vivo na fase 2
             </span>
@@ -439,7 +468,7 @@ export function Composer({ modeId }: { modeId: string }) {
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-[linear-gradient(110deg,transparent_30%,rgb(255_255_255/0.35)_50%,transparent_70%)] transition-transform duration-700 ease-out group-hover:translate-x-full" />
             <Sparkles className="size-5" strokeWidth={2} />
             Gerar {takes > 1 ? `${takes} takes` : ""}
-            <kbd className="ml-2 rounded-full bg-black/15 px-3 py-2 font-sans text-xs font-medium">Ctrl ↵</kbd>
+            <kbd className="ml-2 rounded-full bg-black/15 px-3 py-2 font-mono text-xs font-medium">{MOD} ↵</kbd>
           </motion.button>
         </div>
       </div>

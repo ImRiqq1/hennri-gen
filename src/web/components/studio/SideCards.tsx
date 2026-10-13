@@ -14,7 +14,7 @@ function BigNumber({ value, className }: { value: string | number; className?: s
       initial={{ y: 14, opacity: 0, filter: "blur(4px)" }}
       animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
       transition={{ duration: 0.5, ease }}
-      className={cn("block font-condensed leading-[0.85] tracking-tight text-text tabular", className)}
+      className={cn("display-num block text-text", className)}
     >
       {value}
     </motion.span>
@@ -66,7 +66,7 @@ export function QueueCard({ stats }: { stats: PollState<Stats> }) {
       </Eyebrow>
       <div className="mt-5 flex items-end justify-between gap-4">
         <div>
-          <BigNumber value={q ? q.active : "–"} className="text-[84px]" />
+          <BigNumber value={q ? q.active : "–"} className="text-[96px]" />
           <p className="mt-2 text-sm text-text-2">{q && q.active > 0 ? "gerando agora" : "nada gerando"}</p>
         </div>
         <div className="relative grid place-items-center">
@@ -145,7 +145,7 @@ export function SystemCard() {
           <RotateCw className={cn("size-4", state.kind === "loading" && "animate-spin")} strokeWidth={1.8} />
         </button>
       </div>
-      <p className="mt-3 font-condensed text-3xl uppercase leading-none text-text">
+      <p className="display-title mt-3 text-[28px] text-text">
         {state.kind === "loading" ? "Checando…" : allOk ? "Tudo no ar" : "Pendências"}
       </p>
       {state.kind === "error" ? (
