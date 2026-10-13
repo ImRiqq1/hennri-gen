@@ -34,6 +34,7 @@ export const SHORTCUTS: ShortcutGroup[] = [
       { keys: ["?"], label: "Mostrar atalhos" },
       { keys: ["T"], label: "Alternar claro / escuro" },
       { keys: ["A"], label: "Trocar cor de destaque" },
+      { keys: ["["], label: "Recolher / expandir o menu" },
       { keys: ["Esc"], label: "Fechar / sair do campo" },
     ],
   },
