@@ -1,6 +1,6 @@
 import { AnimatePresence, LayoutGroup, motion } from "motion/react"
 import { ChevronDown, Clapperboard, Images, Loader2, Minus, Plus, Sparkles, Volume2, VolumeX } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { GlassCard } from "@/components/Glass"
 import { MediaInputs, pasteTargetFor, slotsFor } from "@/components/studio/MediaInputs"
 import { useToast } from "@/components/Toaster"
@@ -14,6 +14,7 @@ import { takePrefill } from "@/lib/reuse"
 import { addFiles, kindOf, useMediaState } from "@/lib/media"
 import type { EstimateInput } from "@shared/pricing"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
+import { specFor } from "@shared/models"
 import { EVENTS, isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
 import { cn } from "@/lib/utils"
 
@@ -127,7 +128,10 @@ function ModelPicker({ mode, model, onChange }: { mode: ModeDef; model: string; 
                     m.name === current.name ? "bg-surface-2 text-text" : "text-text-2 hover:bg-surface hover:text-text",
                   )}
                 >
-                  {m.name}
+                  <span className="flex flex-col">
+                    {m.name}
+                    {m.note && <span className="text-[11px] text-text-3">{m.note}</span>}
+                  </span>
                   <span className="rounded-full border border-line-2 px-2 py-0.5 text-[11px] uppercase tracking-wider text-text-3">
                     {m.tier === 1 ? "principal" : "mais modelos"}
                   </span>
@@ -223,9 +227,20 @@ export function Composer({
 
   // Troca de modo: se o modelo/resolução escolhidos não existem no modo novo, cai no padrão dele.
   const model = mode.models.some((m) => m.name === modelChoice) ? modelChoice : mode.models[0].name
-  const resolution = mode.resolutions.includes(resolutionChoice)
-    ? resolutionChoice
-    : mode.resolutions[Math.min(1, mode.resolutions.length - 1)]
+  // Limites do MODELO escolhido (src/shared/models.ts): duração, resoluções, proporções, áudio.
+  const spec = specFor(mode.id, model)
+  const ui = {
+    duration: spec ? spec.duration : null,
+    resolutions: spec?.resolutions ?? mode.resolutions,
+    aspects: spec ? spec.aspects : null,
+    aspect: !!spec?.aspects,
+    audio: !!spec?.audio,
+  }
+  const resolution = ui.resolutions.includes(resolutionChoice) ? resolutionChoice : ui.resolutions[Math.min(1, ui.resolutions.length - 1)]
+  const durMin = ui.duration?.min ?? 4
+  const durMax = ui.duration?.max ?? 30
+  const durationEff = Math.min(durMax, Math.max(durMin, duration))
+  const aspectEff = ui.aspects && !ui.aspects.includes(aspect) ? ui.aspects[0] : aspect
   const isGenjutsu = mode.id === "genjutsu"
   // No Genjutsu o prompt é opcional e fica atrás de um interruptor (igual ao Higgsfield).
   const showPrompt = !isGenjutsu || promptOn
@@ -260,9 +275,9 @@ export function Composer({
         tryGenerate()
         return
       }
-      if (e.altKey && !e.ctrlKey && !e.metaKey && !overlayOpen() && mode.duration && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !overlayOpen() && ui.duration && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
         e.preventDefault()
-        setDuration((d) => Math.min(30, Math.max(4, d + (e.key === "ArrowRight" ? 1 : -1))))
+        setDuration((d) => Math.min(durMax, Math.max(durMin, Math.min(durMax, Math.max(durMin, d)) + (e.key === "ArrowRight" ? 1 : -1))))
         return
       }
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || overlayOpen()) return
@@ -303,9 +318,9 @@ export function Composer({
     modeId: mode.id,
     model,
     resolution,
-    duration: mode.duration ? duration : 5,
-    aspect,
-    audio: mode.audio && audio,
+    duration: ui.duration ? durationEff : 5,
+    aspect: aspectEff,
+    audio: ui.audio && audio,
     takes,
     ...(sourceVideoSec ? { sourceVideoSec: Math.round(sourceVideoSec * 10) / 10 } : {}),
     ...(refVideoSec ? { refVideoSec: Math.round(refVideoSec * 10) / 10 } : {}),
@@ -359,15 +374,15 @@ export function Composer({
     }
   }
 
-  const summary = useMemo(() => {
+  const summary = (() => {
     const parts = [model]
     if (isGenjutsu && model === "Restyle") parts.push(preset ? preset.name : "sem estilo")
-    if (mode.duration) parts.push(`${duration}s`)
+    if (ui.duration) parts.push(`${durationEff}s`)
     parts.push(resolution)
-    if (mode.aspect) parts.push(aspect)
-    if (mode.audio) parts.push(audio ? "com áudio" : "sem áudio")
+    if (ui.aspect) parts.push(aspectEff)
+    if (ui.audio) parts.push(audio ? "com áudio" : "sem áudio")
     return parts.join(" · ")
-  }, [model, mode, duration, resolution, aspect, audio, isGenjutsu, preset])
+  })()
 
   /** Aplica um preset: modelo, parâmetros e prompt base (pedindo as {{variáveis}} se houver). */
   function applyPreset(p: Preset, filledPrompt?: string) {
@@ -474,45 +489,45 @@ export function Composer({
 
       {/* Parâmetros: só os que o modo usa, numa linha que quebra conforme a largura */}
       <div className="flex flex-wrap gap-2.5">
-        {mode.duration && (
-          <Field label="Duração" hint="Alt ← →  ·  4–30 s" className="min-w-[230px] flex-[1.2]">
+        {ui.duration && (
+          <Field label="Duração" hint={`Alt ← →  ·  ${durMin}–${durMax} s`} className="min-w-[230px] flex-[1.2]">
             <div className="flex items-center gap-3">
               <span className="display-num w-[44px] text-metric-sm text-text">
-                {duration}
+                {durationEff}
                 <span className="text-base text-text-3">s</span>
               </span>
               <input
                 type="range"
-                min={4}
-                max={30}
-                value={duration}
+                min={durMin}
+                max={durMax}
+                value={durationEff}
                 onChange={(e) => setDuration(Number(e.target.value))}
                 aria-label="Duração em segundos"
                 className="h-1.5 w-full cursor-pointer appearance-none rounded-full accent-[var(--accent)]"
-                style={{ background: `linear-gradient(90deg, var(--accent) ${((duration - 4) / 26) * 100}%, var(--line-2) 0)` }}
+                style={{ background: `linear-gradient(90deg, var(--accent) ${((durationEff - durMin) / (durMax - durMin)) * 100}%, var(--line-2) 0)` }}
               />
             </div>
           </Field>
         )}
 
-        <Field label="Resolução" className={cn("min-w-[200px] flex-1", !mode.duration && !mode.aspect && "max-w-[380px]")}>
-          <Segmented id="res" options={mode.resolutions} value={resolution} onChange={setResolution} />
+        <Field label="Resolução" className={cn("min-w-[200px] flex-1", !ui.duration && !ui.aspect && "max-w-[380px]")}>
+          <Segmented id="res" options={ui.resolutions} value={resolution} onChange={setResolution} />
         </Field>
 
-        {mode.aspect && (
+        {ui.aspect && (
           <Field label="Proporção" className="min-w-[280px] flex-[1.6]">
             <div className="no-scrollbar flex gap-1 overflow-x-auto rounded-full bg-surface p-1">
-              {ASPECTS.map((a) => (
+              {ASPECTS.filter((a) => ui.aspects?.includes(a.id)).map((a) => (
                 <button
                   key={a.id}
                   type="button"
                   onClick={() => setAspect(a.id)}
-                  aria-pressed={aspect === a.id}
-                  className={cn("relative flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs tabular transition-colors", aspect === a.id ? "text-invert-ink" : "text-text-2 hover:text-text")}
+                  aria-pressed={aspectEff === a.id}
+                  className={cn("relative flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs tabular transition-colors", aspectEff === a.id ? "text-invert-ink" : "text-text-2 hover:text-text")}
                 >
-                  {aspect === a.id && <motion.span layoutId="seg-aspect" transition={spring} className="absolute inset-0 rounded-full bg-invert" />}
+                  {aspectEff === a.id && <motion.span layoutId="seg-aspect" transition={spring} className="absolute inset-0 rounded-full bg-invert" />}
                   <span className="relative grid size-5 place-items-center">
-                    <AspectGlyph w={a.w} h={a.h} active={aspect === a.id} />
+                    <AspectGlyph w={a.w} h={a.h} active={aspectEff === a.id} />
                   </span>
                   <span className="relative">{a.id}</span>
                 </button>
@@ -521,7 +536,7 @@ export function Composer({
           </Field>
         )}
 
-        {mode.audio && (
+        {ui.audio && (
           <Field label="Áudio" className="flex-none">
             <button
               type="button"
@@ -538,11 +553,11 @@ export function Composer({
           </Field>
         )}
       </div>
-      {(!mode.duration || !mode.aspect) && (
+      {(!ui.duration || !ui.aspect) && (
         <p className="-mt-1 text-xs text-text-3">
-          {!mode.duration && !mode.aspect
+          {!ui.duration && !ui.aspect
             ? "Duração e proporção seguem a mídia de origem."
-            : !mode.duration
+            : !ui.duration
               ? "A duração segue a mídia de origem."
               : "A proporção segue a mídia de origem."}
         </p>
@@ -610,9 +625,9 @@ export function Composer({
             mode: mode.id,
             params: {
               resolution,
-              ...(mode.duration ? { duration } : {}),
-              ...(mode.aspect ? { aspect } : {}),
-              ...(mode.audio ? { audio } : {}),
+              ...(ui.duration ? { duration: durationEff } : {}),
+              ...(ui.aspect ? { aspect: aspectEff } : {}),
+              ...(ui.audio ? { audio } : {}),
               ...(preset ? { presetId: preset.id } : {}),
             },
             prompt,

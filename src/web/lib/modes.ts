@@ -1,13 +1,15 @@
 // Modos da tela Criar (BRIEFING.md → "Telas e funcionalidades"). Na fase 2 isto passa a
 // derivar do registro de modelos em src/shared/models/registry.ts (schemas da doc).
 
+import { modelsFor } from "@shared/models"
+
 export type RefLimit = { kind: "imagem" | "vídeo" | "áudio"; max: number; label: string }
 
 export type ModeDef = {
   id: string
   label: string
   short: string
-  models: { name: string; tier: 1 | 2 }[]
+  models: { name: string; tier: 1 | 2; note?: string }[]
   refs: RefLimit[]
   duration: boolean
   aspect: boolean
@@ -23,7 +25,7 @@ export const MODES: ModeDef[] = [
     id: "t2v",
     label: "Texto → vídeo",
     short: "Texto",
-    models: [{ name: "Seedance 2.5", tier: 1 }, { name: "Kling 3.0", tier: 2 }],
+    models: modelsFor("t2v"),
     refs: [],
     duration: true,
     aspect: true,
@@ -35,7 +37,7 @@ export const MODES: ModeDef[] = [
     id: "i2v",
     label: "Imagem → vídeo",
     short: "Imagem",
-    models: [{ name: "Seedance 2.5", tier: 1 }, { name: "Kling 3.0", tier: 2 }],
+    models: modelsFor("i2v"),
     refs: [{ kind: "imagem", max: 2, label: "1º e último frame" }],
     duration: true,
     aspect: false,
@@ -47,7 +49,7 @@ export const MODES: ModeDef[] = [
     id: "ref",
     label: "Referências",
     short: "Refs",
-    models: [{ name: "Seedance 2.5", tier: 1 }],
+    models: modelsFor("ref"),
     refs: [
       { kind: "imagem", max: 30, label: "imagens" },
       { kind: "vídeo", max: 10, label: "vídeos" },
@@ -63,7 +65,7 @@ export const MODES: ModeDef[] = [
     id: "edit",
     label: "Editar vídeo",
     short: "Editar",
-    models: [{ name: "Seedance 2.5", tier: 1 }],
+    models: modelsFor("edit"),
     refs: [{ kind: "vídeo", max: 1, label: "vídeo de origem" }],
     duration: false,
     aspect: true,
@@ -75,7 +77,7 @@ export const MODES: ModeDef[] = [
     id: "extend",
     label: "Estender",
     short: "Estender",
-    models: [{ name: "Seedance 2.5", tier: 1 }],
+    models: modelsFor("extend"),
     refs: [{ kind: "vídeo", max: 1, label: "vídeo a estender" }],
     duration: true,
     aspect: true,
@@ -87,11 +89,7 @@ export const MODES: ModeDef[] = [
     id: "genjutsu",
     label: "Genjutsu",
     short: "Genjutsu",
-    models: [
-      { name: "Motion transfer", tier: 1 },
-      { name: "Object swap", tier: 1 },
-      { name: "Restyle", tier: 1 },
-    ],
+    models: modelsFor("genjutsu"),
     refs: [
       { kind: "vídeo", max: 1, label: "vídeo de origem" },
       { kind: "imagem", max: 8, label: "imagens" },
@@ -106,7 +104,7 @@ export const MODES: ModeDef[] = [
     id: "cinema",
     label: "Cinema Studio",
     short: "Cinema",
-    models: [{ name: "Cinema Studio 4.0", tier: 1 }],
+    models: modelsFor("cinema"),
     refs: [
       { kind: "imagem", max: 30, label: "imagens" },
       { kind: "vídeo", max: 10, label: "vídeos" },
@@ -121,11 +119,7 @@ export const MODES: ModeDef[] = [
     id: "image",
     label: "Imagem",
     short: "Imagem",
-    models: [
-      { name: "SOUL V2", tier: 1 },
-      { name: "Grok Image 2.0", tier: 1 },
-      { name: "Qwen Image 3", tier: 2 },
-    ],
+    models: modelsFor("image"),
     refs: [{ kind: "imagem", max: 10, label: "referências" }],
     duration: false,
     aspect: true,

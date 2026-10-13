@@ -18,6 +18,7 @@ export type GenerateRequest = EstimateInput & {
 }
 
 const urls = (m: Record<string, MediaRef[]>, key: string) => (m[key] ?? []).map((x) => x.url)
+const o3Mode = (res: string) => (res === "4K" ? "4k" : res === "1080p" ? "pro" : "std")
 const nonEmpty = <T,>(a: T[]) => (a.length ? a : undefined)
 
 /** Monta { endpoint, body } ou devolve o motivo de não dar pra enviar. */
@@ -86,14 +87,75 @@ export function buildRequest(r: GenerateRequest): { endpoint: string; body: Reco
         video_urls: nonEmpty(urls(m, "cinema:vid")),
       }
       break
+    // ---- Kling 3.0 (std/pro/4k: sem resolução, áudio = sound on/off)
     case "kling-video/v3.0/std/text-to-video":
+    case "kling-video/v3.0/pro/text-to-video":
+    case "kling-video/v3.0/4k/text-to-video":
+      if (!prompt) return { error: "Escreva o prompt." }
+      body = { prompt, duration: r.duration, aspect_ratio: r.aspect, sound: r.audio ? "on" : "off" }
+      break
+    case "kling-video/v3.0/std/image-to-video":
+    case "kling-video/v3.0/pro/image-to-video":
+    case "kling-video/v3.0/4k/image-to-video": {
+      const [first] = urls(m, "i2v:first")
+      if (!first) return { error: "Envie o primeiro frame." }
+      const [last] = urls(m, "i2v:last")
+      body = { image_url: first, ...(last ? { last_image_url: last } : {}), duration: r.duration, sound: r.audio ? "on" : "off", ...(prompt ? { prompt } : {}) }
+      break
+    }
+    case "kling-video/v3.0-turbo/text-to-video":
+      if (!prompt) return { error: "Escreva o prompt." }
+      body = { prompt, duration: r.duration, aspect_ratio: r.aspect, resolution: r.resolution }
+      break
+    case "kling-video/v3.0-turbo/image-to-video": {
+      const [first] = urls(m, "i2v:first")
+      if (!first) return { error: "Envie o primeiro frame." }
+      if (!prompt) return { error: "Escreva o prompt." }
+      if (urls(m, "i2v:last").length) return { error: "O Kling 3.0 Turbo não usa último frame — tire ou troque de modelo." }
+      body = { prompt, image_url: first, duration: r.duration, resolution: r.resolution }
+      break
+    }
+    // ---- Kling O3 (mode std/pro/4k = 720p/1080p/4K)
+    case "kling-video/o3/first-last-frame": {
+      const [first] = urls(m, "i2v:first")
+      if (!first) return { error: "Envie o primeiro frame." }
+      const [last] = urls(m, "i2v:last")
+      body = { first_frame_url: first, ...(last ? { last_frame_url: last } : {}), duration: r.duration, mode: o3Mode(r.resolution), sound: r.audio ? "on" : "off", ...(prompt ? { prompt } : {}) }
+      break
+    }
+    case "kling-video/o3/image-reference": {
+      const image_urls = urls(m, "ref:img")
+      if (!image_urls.length) return { error: "Envie ao menos uma imagem de referência." }
+      if (urls(m, "ref:vid").length || urls(m, "ref:aud").length) return { error: "O Kling O3 aqui usa só imagens — tire vídeos/áudios ou use o Seedance." }
+      if (image_urls.length > 7) return { error: "O Kling O3 aceita até 7 imagens." }
+      if (!prompt) return { error: "Escreva o prompt." }
+      body = { prompt, image_urls, duration: r.duration, aspect_ratio: r.aspect, mode: o3Mode(r.resolution), sound: r.audio ? "on" : "off" }
+      break
+    }
+    // ---- Wan 3.0 Prime
+    case "alibaba/wan-3.0-prime/text-to-video":
+      if (!prompt) return { error: "Escreva o prompt." }
+      body = { prompt, duration: r.duration, resolution: r.resolution, aspect_ratio: r.aspect, generate_audio: r.audio }
+      break
+    case "alibaba/wan-3.0-prime/image-to-video": {
+      const [first] = urls(m, "i2v:first")
+      if (!first) return { error: "Envie o primeiro frame." }
+      if (!prompt) return { error: "Escreva o prompt." }
+      const [last] = urls(m, "i2v:last")
+      body = { prompt, image_url: first, ...(last ? { end_image_url: last } : {}), duration: r.duration, resolution: r.resolution, generate_audio: r.audio }
+      break
+    }
+    // ---- MiniMax H3 (sempre 2K)
+    case "minimax/h3/text-to-video":
       if (!prompt) return { error: "Escreva o prompt." }
       body = { prompt, duration: r.duration, aspect_ratio: r.aspect }
       break
-    case "kling-video/v3.0/std/image-to-video": {
+    case "minimax/h3/image-to-video": {
       const [first] = urls(m, "i2v:first")
       if (!first) return { error: "Envie o primeiro frame." }
-      body = { image_url: first, duration: r.duration, ...(prompt ? { prompt } : {}) }
+      if (!prompt) return { error: "Escreva o prompt." }
+      const [last] = urls(m, "i2v:last")
+      body = { prompt, image_url: first, ...(last ? { end_image_url: last } : {}), duration: r.duration }
       break
     }
     default: {
@@ -142,4 +204,30 @@ export type JobView = {
   completed_at: number | null
   favorite: boolean
   project_id: string
+}
+
+/**
+ * Corpo só pra estimativa: mesma montagem do envio, com prompt e mídia de mentira (a estimativa
+ * só valida o formato das URLs). Assim a estimativa nunca diverge do que vai ser enviado.
+ */
+export function estimateRequest(r: EstimateInput) {
+  const IMG = "https://example.com/mise-ia/estimativa.png"
+  const VID = "https://example.com/mise-ia/estimativa.mp4"
+  const one = (url: string) => [{ url }]
+  const media: Record<string, MediaRef[]> = {
+    "i2v:first": one(IMG),
+    "ref:img": one(IMG),
+    "edit:video": one(VID),
+    "extend:video": one(VID),
+    "genjutsu:video": one(VID),
+    "genjutsu:img": one(IMG),
+    ...(r.refVideoSec ? { "ref:vid": one(VID), "cinema:vid": one(VID) } : {}),
+  }
+  return buildRequest({
+    ...r,
+    // Restyle: o preset escolhido ou um público qualquer (o preço não depende do estilo)
+    presetId: r.presetId ?? "c2143317-f28d-4c3c-a0b8-39bd547e08a7",
+    prompt: "estimativa de custo",
+    media,
+  })
 }

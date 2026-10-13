@@ -5,6 +5,8 @@
 //    → extraímos as taxas do texto e aplicamos a fórmula abaixo.
 //  - Se a API falhar ou o texto mudar de formato → tabela local (marcada "estimado").
 
+import { specFor } from "./models"
+
 export type Res = "480p" | "720p" | "1080p"
 
 export type EstimateInput = {
@@ -34,33 +36,21 @@ export type EstimateResult = {
 
 type Kind = "seedance" | "seedance-src" | "genjutsu" | "cinema" | "exact"
 
-const ENDPOINTS: Record<string, Record<string, { endpoint: string; kind: Kind }>> = {
-  t2v: {
-    "Seedance 2.5": { endpoint: "bytedance/seedance-2.5/text-to-video", kind: "seedance" },
-    "Kling 3.0": { endpoint: "kling-video/v3.0/std/text-to-video", kind: "exact" },
-  },
-  i2v: {
-    "Seedance 2.5": { endpoint: "bytedance/seedance-2.5/image-to-video", kind: "seedance" },
-    "Kling 3.0": { endpoint: "kling-video/v3.0/std/image-to-video", kind: "exact" },
-  },
-  ref: { "Seedance 2.5": { endpoint: "bytedance/seedance-2.5/reference-to-video", kind: "seedance" } },
-  edit: { "Seedance 2.5": { endpoint: "bytedance/seedance-2.5/video-edit", kind: "seedance-src" } },
-  extend: { "Seedance 2.5": { endpoint: "bytedance/seedance-2.5/video-extend", kind: "seedance-src" } },
-  genjutsu: {
-    "Motion transfer": { endpoint: "higgsfield/genjutsu/motion-transfer/v1.0", kind: "genjutsu" },
-    "Object swap": { endpoint: "higgsfield/genjutsu/object-swap/v1.0", kind: "genjutsu" },
-    Restyle: { endpoint: "higgsfield/genjutsu/restyle/v1.0", kind: "genjutsu" },
-  },
-  cinema: { "Cinema Studio 4.0": { endpoint: "higgsfield/cinema-studio/4.0", kind: "cinema" } },
-  image: {
-    "SOUL V2": { endpoint: "higgsfield-ai/soul/v2/standard", kind: "exact" },
-    "Grok Image 2.0": { endpoint: "xai/grok-imagine-image-2.0", kind: "exact" },
-    "Qwen Image 3": { endpoint: "alibaba/qwen-image-3/text-to-image", kind: "exact" },
-  },
-}
-
-export function endpointFor(modeId: string, model: string) {
-  return ENDPOINTS[modeId]?.[model] ?? null
+/** Endpoint + como estimar. Seedance/Genjutsu/Cinema só devolvem tabela em texto; o resto, `usd` exato. */
+export function endpointFor(modeId: string, model: string): { endpoint: string; kind: Kind } | null {
+  const spec = specFor(modeId, model)
+  if (!spec) return null
+  const e = spec.endpoint
+  const kind: Kind = e.startsWith("bytedance/seedance-2.5/video-")
+    ? "seedance-src"
+    : e.startsWith("bytedance/seedance-2.5/")
+      ? "seedance"
+      : e.startsWith("higgsfield/genjutsu/")
+        ? "genjutsu"
+        : e.startsWith("higgsfield/cinema-studio/")
+          ? "cinema"
+          : "exact"
+  return { endpoint: e, kind }
 }
 
 // Tabela local (US$/s, saída 16:9) — fallback. Valores lidos das descrições da API em 13/10/2026.
@@ -72,8 +62,14 @@ const TABLE: Record<Exclude<Kind, "exact">, Partial<Record<Res, number>>> = {
   cinema: { "480p": 0.2056, "720p": 0.4622 },
 }
 const EXACT_FALLBACK: Record<string, number | undefined> = {
-  // US$/s publicado em set/2026 (blog Higgsfield) — só se a API não responder
-  "Kling 3.0": 0.112,
+  // US$/s aproximado (estimativas da API em 13/10/2026, 5 s) — só se a API não responder
+  "Kling 3.0 Std": 0.107,
+  "Kling 3.0 Pro": 0.095,
+  "Kling 3.0 4K": 0.357,
+  "Kling 3.0 Turbo": 0.119,
+  "Kling O3": 0.095,
+  "Wan 3.0 Prime": 0.056,
+  "MiniMax H3": 0.111,
 }
 
 // pixels de saída 16:9 por resolução (pra converter taxa por token em taxa por segundo)
