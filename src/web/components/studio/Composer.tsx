@@ -1,16 +1,17 @@
 import { AnimatePresence, LayoutGroup, motion } from "motion/react"
-import { ChevronDown, Clapperboard, ImagePlus, Minus, Music2, Plus, Sparkles, Volume2, VolumeX, X } from "lucide-react"
-import { useEffect, useMemo, useRef, useState, type DragEvent } from "react"
+import { ChevronDown, Clapperboard, Images, Minus, Plus, Sparkles, Volume2, VolumeX } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Eyebrow, GlassCard } from "@/components/Glass"
+import { MediaInputs, pasteTargetFor, slotsFor } from "@/components/studio/MediaInputs"
 import { useToast } from "@/components/Toaster"
+import { lastActiveZone } from "@/components/upload/Media"
+import { addFiles, kindOf } from "@/lib/media"
 import { ASPECTS, CINEMA_CONTROLS, MODES, type ModeDef } from "@/lib/modes"
 import { EVENTS, isTyping, MOD, overlayOpen } from "@/lib/shortcuts"
 import { cn } from "@/lib/utils"
 
 const spring = { type: "spring", stiffness: 460, damping: 36 } as const
 const ease = [0.16, 1, 0.3, 1] as const
-
-type LocalRef = { id: string; url: string; name: string }
 
 export function ModeTabs({ value, onChange }: { value: string; onChange: (id: string) => void }) {
   return (
@@ -143,17 +144,54 @@ function AspectGlyph({ w, h, active }: { w: number; h: number; active: boolean }
   )
 }
 
+/** Sub-modos do Genjutsu como abas (no lugar do seletor de modelo). */
+function GenjutsuTabs({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const subs = MODES.find((m) => m.id === "genjutsu")!.models.map((m) => m.name)
+  return (
+    <div role="tablist" aria-label="Modo do Genjutsu" className="flex gap-1 rounded-full bg-surface p-1">
+      {subs.map((s) => (
+        <button
+          key={s}
+          type="button"
+          role="tab"
+          aria-selected={s === value}
+          onClick={() => onChange(s)}
+          className={cn("relative rounded-full px-3.5 py-2 text-sm transition-colors", s === value ? "text-invert-ink" : "text-text-2 hover:text-text")}
+        >
+          {s === value && <motion.span layoutId="genjutsu-sub" transition={spring} className="absolute inset-0 rounded-full bg-invert" />}
+          <span className="relative whitespace-nowrap">{s}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function Switch({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={() => onChange(!on)}
+      className={cn("relative flex h-6 w-10 items-center rounded-full p-0.5 transition-colors", on ? "bg-accent" : "bg-surface-2")}
+    >
+      <motion.span layout transition={spring} className={cn("size-5 rounded-full shadow-[var(--shadow-sm)]", on ? "ml-auto bg-accent-ink" : "bg-invert")} />
+    </button>
+  )
+}
+
 export function Composer({ modeId }: { modeId: string }) {
   const mode = MODES.find((m) => m.id === modeId) ?? MODES[0]
   const [modelChoice, setModel] = useState(mode.models[0].name)
   const [prompt, setPrompt] = useState("")
+  const [promptOn, setPromptOn] = useState(false)
+  const [preset, setPreset] = useState<{ id: string; name: string } | null>(null)
   const [duration, setDuration] = useState(5)
   const [resolutionChoice, setResolution] = useState("720p")
   const [aspect, setAspect] = useState("16:9")
   const [audio, setAudio] = useState(false)
   const [takes, setTakes] = useState(1)
-  const [refs, setRefs] = useState<LocalRef[]>([])
-  const [dragging, setDragging] = useState(false)
   const toast = useToast()
   const promptRef = useRef<HTMLTextAreaElement>(null)
 
@@ -162,24 +200,33 @@ export function Composer({ modeId }: { modeId: string }) {
   const resolution = mode.resolutions.includes(resolutionChoice)
     ? resolutionChoice
     : mode.resolutions[Math.min(1, mode.resolutions.length - 1)]
+  const isGenjutsu = mode.id === "genjutsu"
+  // No Genjutsu o prompt é opcional e fica atrás de um interruptor (igual ao Higgsfield).
+  const showPrompt = !isGenjutsu || promptOn
 
-  useEffect(() => () => refs.forEach((r) => URL.revokeObjectURL(r.url)), [refs])
-
-  const imageLimit = mode.refs.find((r) => r.kind === "imagem")?.max ?? 0
-
-  function addFiles(files: FileList | File[]) {
-    const imgs = Array.from(files).filter((f) => /^image\/(jpeg|png|webp|gif)$/.test(f.type))
-    setRefs((cur) =>
-      [...cur, ...imgs.map((f) => ({ id: crypto.randomUUID(), url: URL.createObjectURL(f), name: f.name }))].slice(0, imageLimit),
-    )
-  }
-
-  // Ctrl+V de imagem e atalhos da tela Criar (ver src/web/lib/shortcuts.ts).
+  // Ctrl+V de arquivo e atalhos da tela Criar (ver src/web/lib/shortcuts.ts).
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      if (!imageLimit) return
       const files = Array.from(e.clipboardData?.files ?? [])
-      if (files.length) addFiles(files)
+      if (!files.length) return
+      e.preventDefault()
+      for (const file of files) {
+        const kind = kindOf(file)
+        if (!kind) {
+          toast({ title: "Arquivo recusado", detail: `${file.name || "colado"}: formato não aceito`, tone: "error" })
+          continue
+        }
+        const zone = lastActiveZone()
+        const target =
+          zone && zone.key.startsWith(`${mode.id}:`) && zone.rules.kinds.includes(kind) ? zone : pasteTargetFor(mode.id, model, kind)
+        if (!target) {
+          toast({ title: `${mode.label} não usa ${kind === "image" ? "imagem" : kind === "video" ? "vídeo" : "áudio"}`, tone: "error" })
+          continue
+        }
+        void addFiles(target.key, [file], target.rules).then((refused) =>
+          refused.forEach((r) => toast({ title: "Arquivo recusado", detail: r, tone: "error" })),
+        )
+      }
     }
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !overlayOpen()) {
@@ -195,14 +242,18 @@ export function Composer({ modeId }: { modeId: string }) {
       if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || overlayOpen()) return
       if (e.key === "/") {
         e.preventDefault()
-        promptRef.current?.focus()
+        if (isGenjutsu) setPromptOn(true)
+        window.setTimeout(() => promptRef.current?.focus(), 0)
       } else if (e.key === "-" || e.key === "_") {
         setTakes((t) => Math.max(1, t - 1))
       } else if (e.key === "+" || e.key === "=") {
         setTakes((t) => Math.min(4, t + 1))
       }
     }
-    const onFocus = () => promptRef.current?.focus()
+    const onFocus = () => {
+      if (isGenjutsu) setPromptOn(true)
+      window.setTimeout(() => promptRef.current?.focus(), 0)
+    }
     window.addEventListener("paste", onPaste)
     window.addEventListener("keydown", onKey)
     window.addEventListener(EVENTS.focusPrompt, onFocus)
@@ -217,36 +268,66 @@ export function Composer({ modeId }: { modeId: string }) {
     toast({ title: "A geração entra na fase 2", detail: "Nada foi enviado e nada foi cobrado." })
   }
 
-  function onDrop(e: DragEvent) {
-    e.preventDefault()
-    setDragging(false)
-    addFiles(e.dataTransfer.files)
-  }
-
   const summary = useMemo(() => {
     const parts = [model]
+    if (isGenjutsu && model === "Restyle") parts.push(preset ? preset.name : "sem estilo")
     if (mode.duration) parts.push(`${duration}s`)
     parts.push(resolution)
     if (mode.aspect) parts.push(aspect)
     if (mode.audio) parts.push(audio ? "com áudio" : "sem áudio")
     return parts.join(" · ")
-  }, [model, mode, duration, resolution, aspect, audio])
+  }, [model, mode, duration, resolution, aspect, audio, isGenjutsu, preset])
+
+  const promptBox = (
+    <div className="group relative flex flex-1 flex-col rounded-[20px] border border-line bg-surface transition-colors focus-within:border-line-2 focus-within:bg-surface-2">
+      <textarea
+        ref={promptRef}
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder={mode.placeholder}
+        aria-label="Prompt"
+        rows={isGenjutsu ? 2 : 4}
+        className={cn(
+          "block w-full flex-1 resize-none bg-transparent px-4 pt-3.5 pb-9 text-[16px] leading-relaxed text-text outline-none placeholder:text-text-3 sm:text-[17px]",
+          isGenjutsu ? "min-h-[84px]" : "min-h-[116px]",
+        )}
+      />
+      <div className="pointer-events-none absolute right-4 bottom-3 left-4 flex items-center justify-between text-xs text-text-3">
+        <span className="tabular">{prompt.length.toLocaleString("pt-BR")} caracteres</span>
+        <span className="hidden items-center gap-1.5 sm:flex">
+          <span className="kbd">/</span> focar · <span className="kbd">Esc</span> sair
+        </span>
+      </div>
+    </div>
+  )
+
+  const media = slotsFor(mode.id, model).length > 0 && (
+    <div className="flex flex-col gap-2">
+      <MediaInputs modeId={mode.id} model={model} presetId={preset?.id ?? null} onPreset={(id, name) => setPreset({ id, name })} />
+      <div className="flex items-center justify-between gap-2 text-xs text-text-3">
+        <span>Arraste, clique ou cole com {MOD}+V</span>
+        <button
+          type="button"
+          aria-disabled="true"
+          title="Escolher da Galeria — chega na fase 3"
+          className="flex cursor-not-allowed items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-text-3"
+        >
+          <Images className="size-3.5" /> Da galeria
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <GlassCard delay={0.08} className="flex flex-col gap-3.5 p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <ModelPicker mode={mode} model={model} onChange={setModel} />
+        {isGenjutsu ? <GenjutsuTabs value={model} onChange={setModel} /> : <ModelPicker mode={mode} model={model} onChange={setModel} />}
         <div className="ml-auto flex items-center gap-1 rounded-full bg-surface p-1">
           <button type="button" aria-label="Menos takes" onClick={() => setTakes((t) => Math.max(1, t - 1))} className="grid size-9 place-items-center rounded-full text-text-2 hover:bg-surface-2 hover:text-text">
             <Minus className="size-4" />
           </button>
-          <span className="min-w-[72px] text-center text-sm text-text tabular">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.span key={takes} initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -10, opacity: 0 }} transition={{ duration: 0.2 }} className="inline-block font-semibold">
-                {takes}
-              </motion.span>
-            </AnimatePresence>{" "}
-            {takes === 1 ? "take" : "takes"}
+          <span className="min-w-[72px] text-center text-sm text-text tabular" aria-live="polite">
+            <span className="font-semibold">{takes}</span> {takes === 1 ? "take" : "takes"}
           </span>
           <button type="button" aria-label="Mais takes" onClick={() => setTakes((t) => Math.min(4, t + 1))} className="grid size-9 place-items-center rounded-full text-text-2 hover:bg-surface-2 hover:text-text">
             <Plus className="size-4" />
@@ -254,96 +335,29 @@ export function Composer({ modeId }: { modeId: string }) {
         </div>
       </div>
 
-      {/* Prompt */}
-      <div className="group relative flex flex-1 flex-col rounded-[24px] border border-line bg-surface transition-colors focus-within:border-line-2 focus-within:bg-surface-2">
-        <textarea
-          ref={promptRef}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder={mode.placeholder}
-          rows={4}
-          className="block min-h-[128px] w-full flex-1 resize-none bg-transparent px-4 pt-4 pb-10 text-[16px] leading-relaxed text-text outline-none placeholder:text-text-3 sm:text-[17px]"
-        />
-        <div className="pointer-events-none absolute right-5 bottom-4 left-5 flex items-center justify-between text-xs text-text-3">
-          <span className="tabular">{prompt.length.toLocaleString("pt-BR")} caracteres</span>
-          <span className="hidden items-center gap-1.5 sm:flex">
-            <span className="kbd">/</span> focar · <span className="kbd">Esc</span> sair
-          </span>
-        </div>
-      </div>
-
-      {/* Referências */}
-      <AnimatePresence initial={false}>
-        {mode.refs.length > 0 && (
-          <motion.div
-            key="refs"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.35, ease }}
-            className="overflow-hidden"
-          >
-            <div
-              onDragOver={(e) => {
-                e.preventDefault()
-                setDragging(true)
-              }}
-              onDragLeave={() => setDragging(false)}
-              onDrop={onDrop}
-              className={cn(
-                "flex flex-wrap items-stretch gap-2 rounded-[24px] border border-dashed p-2 transition-colors",
-                dragging ? "border-accent bg-accent/10" : "border-line-2",
-              )}
-            >
-              <label className="flex min-h-[88px] min-w-[200px] flex-1 cursor-pointer items-center gap-3 rounded-[18px] px-4 text-sm text-text-2 transition-colors hover:bg-surface">
-                <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface-2 text-text">
-                  <ImagePlus className="size-5" strokeWidth={1.8} />
-                </span>
-                <span>
-                  <span className="block text-text">Arraste, cole ou escolha</span>
-                  <span className="text-xs text-text-3">jpeg, png, webp, gif, mp4, wav · prévia local</span>
-                </span>
-                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={(e) => e.target.files && addFiles(e.target.files)} />
-              </label>
-              <AnimatePresence>
-                {refs.map((r, i) => (
-                  <motion.figure
-                    key={r.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={spring}
-                    className="group/ref relative size-[88px] overflow-hidden rounded-[18px]"
-                  >
-                    <img src={r.url} alt={r.name} className="size-full object-cover" />
-                    <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/55 px-2 py-0.5 text-[11px] text-white backdrop-blur">image_{i + 1}</span>
-                    <button
-                      type="button"
-                      aria-label="Remover referência"
-                      onClick={() => setRefs((cur) => cur.filter((x) => x.id !== r.id))}
-                      className="absolute top-1.5 right-1.5 grid size-6 place-items-center rounded-full bg-black/55 text-white opacity-0 backdrop-blur transition-opacity group-hover/ref:opacity-100"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  </motion.figure>
-                ))}
-              </AnimatePresence>
-              <div className="flex flex-col justify-center gap-1.5 px-3">
-                {mode.refs.map((l) => (
-                  <span key={l.kind + l.label} className="flex items-center gap-2 text-xs text-text-2 tabular">
-                    {l.kind === "áudio" ? <Music2 className="size-3.5 text-text-3" /> : null}
-                    <span className="font-semibold text-text">
-                      {l.kind === "imagem" ? refs.length : 0}/{l.max}
-                    </span>
-                    {l.label}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isGenjutsu ? (
+        <>
+          {media}
+          <div className="flex items-center justify-between rounded-[16px] border border-line bg-surface px-3.5 py-2.5">
+            <span className="text-sm text-text">
+              Prompt <span className="text-text-3">· opcional</span>
+            </span>
+            <Switch on={promptOn} onChange={setPromptOn} label="Usar prompt" />
+          </div>
+          <AnimatePresence initial={false}>
+            {showPrompt && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.22, ease }} className="overflow-hidden">
+                {promptBox}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
+      ) : (
+        <>
+          {promptBox}
+          {media}
+        </>
+      )}
 
       {/* Parâmetros: só os que o modo usa, numa linha que quebra conforme a largura */}
       <div className="flex flex-wrap gap-2.5">
@@ -368,7 +382,7 @@ export function Composer({ modeId }: { modeId: string }) {
           </Field>
         )}
 
-        <Field label="Resolução" className="min-w-[200px] flex-1">
+        <Field label="Resolução" className={cn("min-w-[200px] flex-1", !mode.duration && !mode.aspect && "max-w-[380px]")}>
           <Segmented id="res" options={mode.resolutions} value={resolution} onChange={setResolution} />
         </Field>
 
@@ -413,7 +427,11 @@ export function Composer({ modeId }: { modeId: string }) {
       </div>
       {(!mode.duration || !mode.aspect) && (
         <p className="-mt-1 text-xs text-text-3">
-          {[!mode.duration && "Duração", !mode.aspect && "proporção"].filter(Boolean).join(" e ")} seguem a mídia de origem.
+          {!mode.duration && !mode.aspect
+            ? "Duração e proporção seguem a mídia de origem."
+            : !mode.duration
+              ? "A duração segue a mídia de origem."
+              : "A proporção segue a mídia de origem."}
         </p>
       )}
 

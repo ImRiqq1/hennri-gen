@@ -41,7 +41,8 @@ async function checkHiggsfield(credentials: string | undefined): Promise<Check> 
   if (!credentials) return { ok: false, detail: "HF_CREDENTIALS não configurada" }
   try {
     const est = await estimate(credentials, PROBE_ENDPOINT, { prompt: "health check" })
-    return { ok: true, detail: `chave ok — estimativa de teste US$ ${est.usd}` }
+    const valor = "usd" in est ? ` — estimativa de teste US$ ${est.usd}` : ""
+    return { ok: true, detail: `chave ok${valor}` }
   } catch (e) {
     if (e instanceof HiggsfieldError) {
       if (e.status === 401) return { ok: false, detail: "credenciais inválidas (401)" }

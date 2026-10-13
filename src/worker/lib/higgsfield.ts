@@ -40,13 +40,42 @@ async function hfFetch(credentials: string | undefined, path: string, init: Requ
   return { body, correlationId }
 }
 
-export type Estimate = { credits: string; usd: string }
+/**
+ * POST /estimate/<endpoint> — mesmo corpo da geração; não cobra nada.
+ * Atenção (confirmado em 13/10/2026): nem todo modelo devolve número. O SOUL V2 devolve
+ * `{ credits, usd }`; o Seedance 2.5 devolve `{ type: "description", pricing_description }`,
+ * uma tabela em texto. Quem chama decide como transformar isso em valor.
+ */
+export type Estimate = { credits: string; usd: string } | { type: "description"; pricing_description: string }
 
-/** POST /estimate/<endpoint> — mesmo corpo da geração; não cobra nada. */
 export async function estimate(credentials: string | undefined, endpoint: string, input: unknown) {
   const { body } = await hfFetch(credentials, `/estimate/${endpoint}`, {
     method: "POST",
     body: JSON.stringify(input),
   })
   return body as Estimate
+}
+
+export type UploadTicket = {
+  public_url: string
+  upload_url: string
+  content_type: string
+  upload_headers: Record<string, string>
+}
+
+/** POST /files/generate-upload-url — URL presignada (expira em 1 h). O PUT vai direto do navegador. */
+export async function generateUploadUrl(credentials: string | undefined, contentType: string) {
+  const { body } = await hfFetch(credentials, "/files/generate-upload-url", {
+    method: "POST",
+    body: JSON.stringify({ content_type: contentType }),
+  })
+  return body as UploadTicket
+}
+
+export type RestylePreset = { id: string; name: string; preview_url: string }
+
+/** GET /models/higgsfield/genjutsu/restyle/v1.0/presets — catálogo atual de estilos do Restyle. */
+export async function restylePresets(credentials: string | undefined) {
+  const { body } = await hfFetch(credentials, "/models/higgsfield/genjutsu/restyle/v1.0/presets")
+  return ((body as { items?: RestylePreset[] } | null)?.items ?? []) as RestylePreset[]
 }
