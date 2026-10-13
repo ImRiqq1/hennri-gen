@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @font-face {
   font-family: "Fixture";
@@ -42,46 +42,109 @@
 }
 
 /*
-  HENNRI /GEN — tema escuro único, preto e branco. Quem tem cor é o vídeo.
-  Sem cor de acento. Vermelho (--alert) só pra erro e estouro de limite.
+  HENNRI /GEN — "vidro sobre grafite".
+  Dois modos (data-theme) × quatro destaques (data-accent). Tudo deriva destes tokens.
+  O destaque é usado com economia: ação principal, estado ativo, brilho ambiente.
+  Vermelho (--danger) fica reservado pra erro e estouro de limite.
 */
-:root {
-  --ink: #09090b;
-  --paper: #ffffff;
-  --cream: #e8e0d5;
-  --smoke: #141416;
-  --ash: #26262a;
-  --alert: #e5484d;
+:root,
+[data-theme="dark"] {
+  --bg: #060607;
+  --bg-2: #0c0c0e;
+  --surface: rgb(255 255 255 / 0.042);
+  --surface-2: rgb(255 255 255 / 0.075);
+  --surface-solid: #121214;
+  --line: rgb(255 255 255 / 0.075);
+  --line-2: rgb(255 255 255 / 0.14);
+  --text: #f4f1ec;
+  --text-2: rgb(236 230 222 / 0.62);
+  --text-3: rgb(236 230 222 / 0.36);
+  --invert: #f4f1ec;
+  --invert-ink: #0b0b0c;
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.07), inset 0 0 0 1px rgb(255 255 255 / 0.02);
+  --shadow: 0 40px 80px -32px rgb(0 0 0 / 0.75), 0 2px 6px rgb(0 0 0 / 0.25);
+  --shadow-sm: 0 10px 30px -12px rgb(0 0 0 / 0.6);
+  --orb-opacity: 0.7;
+  --grain-opacity: 0.06;
+  --danger: #ff4d55;
+}
 
-  --background: var(--ink);
-  --foreground: var(--cream);
-  --card: var(--smoke);
-  --card-foreground: var(--cream);
-  --popover: var(--smoke);
-  --popover-foreground: var(--cream);
-  --primary: var(--paper);
-  --primary-foreground: var(--ink);
-  --secondary: var(--ash);
-  --secondary-foreground: var(--cream);
-  --muted: var(--smoke);
-  --muted-foreground: rgb(232 224 213 / 0.55);
-  --accent: var(--ash);
-  --accent-foreground: var(--paper);
-  --destructive: var(--alert);
-  --destructive-foreground: var(--paper);
-  --border: rgb(232 224 213 / 0.1);
-  --input: rgb(232 224 213 / 0.16);
-  --ring: var(--cream);
-  --radius: 0px;
+[data-theme="light"] {
+  --bg: #e6e7ea;
+  --bg-2: #f1f1f3;
+  --surface: rgb(255 255 255 / 0.56);
+  --surface-2: rgb(255 255 255 / 0.82);
+  --surface-solid: #ffffff;
+  --line: rgb(12 12 16 / 0.07);
+  --line-2: rgb(12 12 16 / 0.13);
+  --text: #0b0b0c;
+  --text-2: rgb(11 11 12 / 0.6);
+  --text-3: rgb(11 11 12 / 0.38);
+  --invert: #0b0b0c;
+  --invert-ink: #f4f1ec;
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 0 0 1px rgb(255 255 255 / 0.4);
+  --shadow: 0 40px 70px -36px rgb(30 32 40 / 0.28), 0 2px 6px rgb(30 32 40 / 0.06);
+  --shadow-sm: 0 10px 24px -14px rgb(30 32 40 / 0.3);
+  --orb-opacity: 0.55;
+  --grain-opacity: 0.035;
+  --danger: #e5303a;
+}
+
+[data-accent="laranja"] { --accent: #ff5b1f; --accent-ink: #fff7f2; --accent-glow: 255 91 31; }
+[data-accent="lima"]    { --accent: #d6f54a; --accent-ink: #0b0b0c; --accent-glow: 214 245 74; }
+[data-accent="azul"]    { --accent: #2f6bff; --accent-ink: #f5f8ff; --accent-glow: 47 107 255; }
+[data-accent="mono"]    { --accent: var(--invert); --accent-ink: var(--invert-ink); --accent-glow: 180 176 170; }
+[data-theme="light"][data-accent="lima"] { --accent: #c4e62e; }
+
+:root {
+  /* shadcn */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface-solid);
+  --card-foreground: var(--text);
+  --popover: var(--surface-solid);
+  --popover-foreground: var(--text);
+  --primary: var(--invert);
+  --primary-foreground: var(--invert-ink);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface);
+  --muted-foreground: var(--text-2);
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line-2);
+  --ring: var(--accent);
+  --radius: 1.25rem;
+
+  /* motion */
+  --dur-xs: 120ms;
+  --dur-sm: 200ms;
+  --dur-md: 320ms;
+  --dur-lg: 560ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --dur-xs: 0ms; --dur-sm: 0ms; --dur-md: 0ms; --dur-lg: 0ms; }
 }
 
 @theme inline {
-  --color-ink: var(--ink);
-  --color-paper: var(--paper);
-  --color-cream: var(--cream);
-  --color-smoke: var(--smoke);
-  --color-ash: var(--ash);
-  --color-alert: var(--alert);
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-solid: var(--surface-solid);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-invert: var(--invert);
+  --color-invert-ink: var(--invert-ink);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -95,8 +158,6 @@
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -106,23 +167,128 @@
   --font-condensed: "Fixture Condensed", "Fixture", sans-serif;
   --font-ultra: "Fixture Ultra", "Fixture", sans-serif;
 
-  --animate-pulse-soft: pulse-soft 1.6s ease-in-out infinite;
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-pulse-soft: pulse-soft 1.8s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-drift-a: drift-a 26s ease-in-out infinite alternate;
+  --animate-drift-b: drift-b 32s ease-in-out infinite alternate;
+
   @keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.35; transform: scale(0.82); }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes drift-a {
+    from { transform: translate3d(-8%, -6%, 0) scale(1); }
+    to { transform: translate3d(10%, 8%, 0) scale(1.15); }
+  }
+  @keyframes drift-b {
+    from { transform: translate3d(6%, 10%, 0) scale(1.1); }
+    to { transform: translate3d(-12%, -4%, 0) scale(0.95); }
   }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-line outline-accent/60;
   }
   html {
-    background: var(--ink);
-    color-scheme: dark;
+    background: var(--bg);
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color var(--dur-md) var(--ease-out);
   }
+  /* Sem fundo no body: ele pintaria por cima do <Ambient> (z-index negativo).
+     O fundo fica só no <html>, que vai pro canvas. */
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply font-sans text-text antialiased;
     min-height: 100dvh;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+/* A transição de tema anima só o clip-path do novo snapshot (theme.tsx). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@layer components {
+  /* Vidro: o bloco básico de toda superfície. */
+  .glass {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--highlight), var(--shadow);
+    backdrop-filter: blur(28px) saturate(170%);
+    -webkit-backdrop-filter: blur(28px) saturate(170%);
+  }
+  .glass-2 {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    box-shadow: var(--highlight);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+  }
+
+  /* Recorte circular no canto superior direito (o "notch" das referências),
+     onde mora o botão ↗. --notch = raio do recorte. */
+  .notch {
+    --notch: 26px;
+    --notch-gap: 6px;
+    -webkit-mask: radial-gradient(
+      circle calc(var(--notch) + var(--notch-gap)) at calc(100% - var(--notch)) var(--notch),
+      transparent 99%,
+      #000 100%
+    );
+    mask: radial-gradient(
+      circle calc(var(--notch) + var(--notch-gap)) at calc(100% - var(--notch)) var(--notch),
+      transparent 99%,
+      #000 100%
+    );
+  }
+
+  /* Luz que segue o cursor dentro do card (--mx/--my vindos do Spotlight). */
+  .spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--spot, 0);
+    transition: opacity var(--dur-md) var(--ease-out);
+    background: radial-gradient(
+      420px circle at var(--mx, 50%) var(--my, 50%),
+      rgb(var(--accent-glow) / 0.13),
+      transparent 60%
+    );
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }

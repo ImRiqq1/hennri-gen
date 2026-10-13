@@ -1,11 +1,24 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark" data-accent="laranja">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#09090B" />
+    <meta name="theme-color" content="#060607" />
     <title>HENNRI /GEN</title>
+    <script>
+      // Aplica o tema salvo antes do primeiro paint (evita piscar o tema errado).
+      ;(function () {
+        var el = document.documentElement
+        var s = null
+        try { s = JSON.parse(localStorage.getItem('hennri-gen:tema') || 'null') } catch (e) {}
+        var mode = s && (s.mode === 'light' || s.mode === 'dark') ? s.mode
+          : (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark')
+        el.dataset.theme = mode
+        el.style.colorScheme = mode
+        if (s && s.accent) el.dataset.accent = s.accent
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

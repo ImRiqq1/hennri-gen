@@ -7,11 +7,32 @@ export type Health = {
   checks: { db: Check; files: Check; higgsfield: Check }
 }
 
-export async function getHealth(): Promise<Health> {
-  const res = await fetch("/api/health")
+export type Stats = {
+  queue: { active: number; waiting: number; concurrency: number }
+  spend: {
+    dayUsd: number
+    monthUsd: number
+    dayLimitUsd: number | null
+    monthLimitUsd: number | null
+    brlRate: number | null
+  }
+  gallery: { saved: number }
+}
+
+async function getJson<T>(path: string, isValid: (b: unknown) => boolean): Promise<T> {
+  const res = await fetch(path)
   const body = await res.json().catch(() => null)
-  if (!body || typeof body !== "object" || !("checks" in body)) {
+  if (!isValid(body)) {
     throw new Error((body as { error?: string } | null)?.error ?? `HTTP ${res.status}`)
   }
-  return body as Health
+  return body as T
 }
+
+export const getHealth = () =>
+  getJson<Health>("/api/health", (b) => !!b && typeof b === "object" && "checks" in b)
+
+export const getStats = () =>
+  getJson<Stats>("/api/stats", (b) => !!b && typeof b === "object" && "queue" in b)
+
+export const usd = (n: number) =>
+  n.toLocaleString("pt-BR", { style: "currency", currency: "USD", minimumFractionDigits: 2 })

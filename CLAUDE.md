@@ -46,4 +46,11 @@ Sempre responder e escrever em português do Brasil.
 
 ## Identidade visual
 
-Fundo `#09090B`, texto cream `#E8E0D5`, branco e cinzas. Sem cor de acento (nada de verde). Vermelho só pra erro/estouro de limite. Fontes Fixture / Fixture Condensed / Fixture Ultra em `public/fonts` (as mesmas do /MAKER). Botões pill, números grandes, muito respiro. Tema escuro único; mobile-first na tela Criar e na fila.
+**Decisão do Henrique em 13/10/2026 — substitui o "tema escuro único / sem acento" do briefing:** visual high-tech estilo Apple, vidro fosco, suave e interativo, com **modo claro e escuro** (interruptor sol/lua, padrão escuro) e **cor de destaque ajustável** (laranja padrão, lima, azul, mono). Referências: dashboards com cards de canto recortado + botão ↗, pills segmentadas, números enormes, timeline de nós.
+
+- Tokens em `src/web/index.css`: `data-theme` (dark/light) × `data-accent`. Usar sempre as classes semânticas (`bg-surface`, `text-text-2`, `bg-accent`, `bg-invert`…), nunca cor fixa.
+- `.glass` / `.glass-2` = vidro (backdrop-filter). **Nunca deixar `filter`, `opacity < 1` ou `mask` num ancestral de um vidro depois da animação** — isola o backdrop-filter. Por isso o `GlassCard` termina a entrada com `filter: none` e o recorte (`corner`) fica num filho.
+- O `body` não tem fundo (fica no `<html>`), senão cobre o `<Ambient>` de z-index negativo.
+- Tema salvo em `localStorage` (`hennri-gen:tema`), aplicado por script inline no `index.html` antes do paint. Troca de tema com revelação circular (View Transitions).
+- Fontes Fixture (display: Fixture Condensed; Fixture Ultra fica ilegível em número pequeno). Vermelho (`--danger`) só pra erro e estouro de limite.
+- Motion: biblioteca `motion` (`motion/react`), easing `[0.16, 1, 0.3, 1]`, `MotionConfig reducedMotion="user"`.
