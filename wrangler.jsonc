@@ -1,0 +1,51 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hennri-gen",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "dev": { "port": 8788 },
+
+  // Só gen.hennri.com (atrás do Cloudflare Access) pode responder. O *.workers.dev e as
+  // URLs de preview passariam por fora do Access, então ficam desligados.
+  "workers_dev": false,
+  "preview_urls": false,
+
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hennri-gen-db",
+      // Placeholder até criar o banco remoto (wrangler d1 create hennri-gen-db).
+      // O wrangler dev --local funciona com qualquer valor aqui.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "r2_buckets": [
+    {
+      "binding": "FILES",
+      "bucket_name": "hennri-gen-files"
+    }
+  ],
+
+  "vars": {
+    // Preenchidos ao configurar o Access (Zero Trust → Applications → gen.hennri.com).
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+  },
+
+  "routes": [
+    // mesmo padrão do maker.hennri.com e party.hennri.com — custom domain.
+    { "pattern": "gen.hennri.com", "custom_domain": true }
+  ]
+
+  // Queue (cópia pro R2) e Cron (recuperação) entram nas fases 2 e 3.
+}
