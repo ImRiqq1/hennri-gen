@@ -32,6 +32,8 @@ export type JobRow = {
   endpoint: string | null
   request_body_json: string | null
   favorite: number
+  project_id: string
+  preset_id: string | null
   attempts: number
   last_checked_at: number | null
   created_at: number
@@ -68,6 +70,7 @@ export function toView(r: JobRow): JobView {
     submitted_at: r.submitted_at,
     completed_at: r.completed_at,
     favorite: !!r.favorite,
+    project_id: r.project_id,
   }
 }
 
@@ -131,6 +134,12 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
     return { ok: false, status: 409, error: `Acima de ${fmt(cfg.confirmAbove)} — confirme o envio.`, needsConfirm: true }
   }
 
+  // projeto precisa existir e estar ativo; senão vai pro padrão
+  const project = req.projectId
+    ? await env.DB.prepare(`SELECT id FROM projects WHERE id = ?1 AND archived = 0`).bind(req.projectId).first<{ id: string }>()
+    : null
+  const template = req.templateId ? await env.DB.prepare(`SELECT id FROM presets WHERE id = ?1`).bind(req.templateId).first<{ id: string }>() : null
+
   const now = Date.now()
   const batch = crypto.randomUUID()
   const params = {
@@ -147,8 +156,8 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
     ids.map((id, i) =>
       env.DB.prepare(
         `INSERT INTO jobs (id, batch_id, model_id, mode, prompt, params_json, refs_json, status,
-           estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'waiting_slot', ?8, ?9, ?10, ?11, ?12, ?13)`,
+           estimated_cost_usd, estimate_basis, estimate_source, endpoint, request_body_json, created_at, project_id, preset_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'waiting_slot', ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)`,
       ).bind(
         id,
         batch,
@@ -163,6 +172,8 @@ export async function createJobs(env: Env, req: GenerateRequest, ctx: Ctx): Prom
         built.endpoint,
         JSON.stringify(built.body),
         now + i, // ordem estável entre takes
+        project?.id ?? "sem-projeto",
+        template?.id ?? null,
       ),
     ),
   )

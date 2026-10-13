@@ -5,6 +5,7 @@ import { estimateRoute } from "./routes/estimate"
 import { health } from "./routes/health"
 import { files, jobs } from "./routes/jobs"
 import { stats } from "./routes/stats"
+import { costs, presets, projects, settings } from "./routes/studio"
 import { genjutsu, uploads } from "./routes/uploads"
 import { webhooks } from "./routes/webhooks"
 import type { AppEnv, Env, SaveMessage } from "./types"
@@ -22,6 +23,10 @@ app.route("/genjutsu", genjutsu)
 app.route("/estimate", estimateRoute)
 app.route("/jobs", jobs)
 app.route("/files", files)
+app.route("/settings", settings)
+app.route("/projects", projects)
+app.route("/presets", presets)
+app.route("/costs", costs)
 
 app.notFound((c) => c.json({ error: "rota não encontrada" }, 404))
 app.onError((err, c) => {

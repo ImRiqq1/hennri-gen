@@ -11,6 +11,10 @@ export type GenerateRequest = EstimateInput & {
   media: Record<string, MediaRef[]>
   /** o usuário confirmou um envio acima do valor de confirmação */
   confirmed?: boolean
+  /** projeto (cliente/campanha); padrão "sem-projeto" */
+  projectId?: string
+  /** preset do MISE.IA usado pra montar o pedido (não confundir com presetId do Restyle) */
+  templateId?: string
 }
 
 const urls = (m: Record<string, MediaRef[]>, key: string) => (m[key] ?? []).map((x) => x.url)
@@ -137,4 +141,5 @@ export type JobView = {
   submitted_at: number | null
   completed_at: number | null
   favorite: boolean
+  project_id: string
 }

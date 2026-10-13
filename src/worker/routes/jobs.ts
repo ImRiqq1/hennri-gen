@@ -10,6 +10,8 @@ const GenerateBody = EstimateBody.extend({
   prompt: z.string().max(10_000),
   media: z.record(z.string(), z.array(MediaRef).max(50)),
   confirmed: z.boolean().optional(),
+  projectId: z.string().max(64).optional(),
+  templateId: z.string().max(64).optional(),
 })
 
 const ACTIVE = "('waiting_slot','submitting','queued','in_progress','completed','saving')"
